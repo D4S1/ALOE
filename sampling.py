@@ -1,6 +1,7 @@
 import tensorflow as tf
 import tensorflow_probability as tfp
 
+# needs to have profile for each position of bcr
 def sample_alpha(n_dim:int=4, min_large:float=0.85) -> tf.Tensor:
     """
     Given number of dimension of Dirichlet distribution randomly select
@@ -34,6 +35,7 @@ def sample_alpha(n_dim:int=4, min_large:float=0.85) -> tf.Tensor:
 
     return result
 
+# needs to have profile for each position of bcr
 def sample_bcr_clone(gene_len:int, n_cells:int, alpha:tf.Tensor) -> tf.Tensor:
     """
     Given gene length and number of cells generate sample gene sequence sampling
@@ -60,7 +62,7 @@ def sample_reads_matrix(n_snp:int, n_cells:int, avg_reads_num:int) -> tf.Tensor:
     Given number of snp locations and cells with addtitionall information
     about average number of reads per snp location it resturn sampled from poisson
     distribution reads matrix.
-    
+
     :param n_snp: Number of analyzed snp locations
     :param n_cells: Number of cells to generate reads for
     "return: Reads matrix - tesor of shape (n_snp, n_cells)
@@ -70,3 +72,12 @@ def sample_reads_matrix(n_snp:int, n_cells:int, avg_reads_num:int) -> tf.Tensor:
 def sample_mutation_matrix(n_snp:int, n_cells:int, mutation_rate:float) -> tf.Tensor:
     pass
     
+
+def sample_clone():
+    # inuput params: bcr_len, n_cells, n_snp,
+    
+    # sample alpha - clone profile
+    # bcr sample
+    # reads matrix
+    # mutations
+    pass
