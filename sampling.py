@@ -113,6 +113,9 @@ def sample_data(
     clone_relax_rate = tfp.distributions.Beta(*clone_relax_prior).sample()
     clones_profiles = sample_clone_profile(n_snp=n_mutation, n_clones=n_clones, mutation_rate=mutation_rate, clone_relax_rate=clone_relax_rate)
 
+    # reads sampling
+    # mutation sampling
+
     return BCR, clones_profiles
 
 
