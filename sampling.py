@@ -105,7 +105,7 @@ def sample_data(
 
     n_hc = len(hiperclusters)
     psi = [1 / n_clones] * n_clones
-    hc_clone = tf.random.categorical([psi], n_hc)
+    hc_clone = tf.squeeze(tf.random.categorical([psi], n_hc), axis=0)
 
     BCR = [sample_hipercluster_bcr(gene_len=BCR_len, n_cells=hc, BCR_prior=BCR_prior) for hc in hiperclusters]
     BCR = tf.concat(BCR, axis=0)
@@ -113,12 +113,20 @@ def sample_data(
     clone_relax_rate = tfp.distributions.Beta(*clone_relax_prior).sample()
     clones_profiles = sample_clone_profile(n_snp=n_mutation, n_clones=n_clones, mutation_rate=mutation_rate, clone_relax_rate=clone_relax_rate)
 
-    # reads sampling
-    # mutation sampling
+    reads_counts = sample_reads_matrix(n_snp=n_mutation, n_cells=n_cells, avg_reads_num=avg_reads_num)
 
-    return BCR, clones_profiles
+    # mutation sampling - make function
+    probs = [
+        tf.tile(tf.expand_dims(clones_profiles[:,clone], axis=1), [1,size])
+        for size, clone in zip(hiperclusters, hc_clone)
+        ]
+    probs = tf.concat(probs, axis=1)
 
+    mutation_counts = tfp.distributions.Binomial(reads_counts, probs).sample()
 
+    # shaffle
 
-BCR, clones_profiles = sample_data(n_cells = 100)
+    return BCR, clones_profiles, mutation_counts
+
+BCR, clones_profiles, mutation_counts = sample_data(n_cells = 500)
 print(f'{BCR.shape=}\t{clones_profiles.shape=}')
