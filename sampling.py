@@ -107,26 +107,56 @@ def sample_data(
     psi = [1 / n_clones] * n_clones
     hc_clone = tf.squeeze(tf.random.categorical([psi], n_hc), axis=0)
 
+    # Metadata
+    metadata = {'hipercluster': [], 'clone': []}
+    for hc, (size, clone) in enumerate(zip(hiperclusters, hc_clone)):
+        metadata['hipercluster'].extend([hc]*size)
+        metadata['clone'].extend([clone]*size)
+
+    # BCR
     BCR = [sample_hipercluster_bcr(gene_len=BCR_len, n_cells=hc, BCR_prior=BCR_prior) for hc in hiperclusters]
     BCR = tf.concat(BCR, axis=0)
 
+    # Reads
+    reads_counts = sample_reads_matrix(n_snp=n_mutation, n_cells=n_cells, avg_reads_num=avg_reads_num)
+
+    # Clone profiles
     clone_relax_rate = tfp.distributions.Beta(*clone_relax_prior).sample()
     clones_profiles = sample_clone_profile(n_snp=n_mutation, n_clones=n_clones, mutation_rate=mutation_rate, clone_relax_rate=clone_relax_rate)
 
-    reads_counts = sample_reads_matrix(n_snp=n_mutation, n_cells=n_cells, avg_reads_num=avg_reads_num)
-
-    # mutation sampling - make function
-    probs = [
-        tf.tile(tf.expand_dims(clones_profiles[:,clone], axis=1), [1,size])
-        for size, clone in zip(hiperclusters, hc_clone)
-        ]
+    # Mutation sampling - make function
+    theta0 = tfp.distributions.Beta(*theta0_prior).sample()
+    theta1 = tfp.distributions.Beta(*theta1_prior).sample([n_mutation, 1])
+    probs = []
+    for size, clone in zip(hiperclusters, hc_clone):
+        hc_c = tf.tile(tf.expand_dims(clones_profiles[:,clone], axis=1), [1,size])
+        hc_c = hc_c * theta1 + (1-hc_c) * theta0
+        probs.append(hc_c)
     probs = tf.concat(probs, axis=1)
 
     mutation_counts = tfp.distributions.Binomial(reads_counts, probs).sample()
 
-    # shaffle
+    # Shaffle
+    permutation = tf.random.shuffle(range(n_cells))
 
-    return BCR, clones_profiles, mutation_counts
+    BCR = tf.gather(BCR, permutation, axis=0)
+    reads_counts = tf.gather(reads_counts, permutation, axis=1) 
+    mutation_counts = tf.gather(mutation_counts, permutation, axis=1)
 
-BCR, clones_profiles, mutation_counts = sample_data(n_cells = 500)
-print(f'{BCR.shape=}\t{clones_profiles.shape=}')
+    metadata['hipercluster'] = [metadata['hipercluster'][i] for i in permutation]
+    metadata['clone'] = [metadata['clone'][i] for i in permutation]
+
+
+    return {
+        'BCR': BCR,
+        'reads_counts': reads_counts,
+        'mutation_counts': mutation_counts,
+        'clone_profiles': clones_profiles,
+        'hc_clone': hc_clone,
+        'metadata': metadata,
+        'relax_rate': clone_relax_rate,
+        'theta0': theta0,
+        'theta1': theta1
+    }
+
+data = sample_data(n_cells = 500)
