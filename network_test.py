@@ -38,13 +38,13 @@ class Net(tf.Module):
                  latent_dim: int
                 ):
         
-        self.snp_head = FACTMx_head_Multinomial(dim=1, dim_latent=latent_dim, head_name="SNP") # loss negloglikelihood - implemented in FACTMx_head_Multinomial
-        self.bcr_head = FACTMx_head_Multinomial(dim=3, dim_latent=latent_dim, head_name="BCR") # loss negloglikelihood - implemented in FACTMx_head_Multinomial
+        self.snp_head = FACTMx_head_Multinomial(dim=1, dim_latent=latent_dim, head_name="SNP")
+        self.bcr_head = FACTMx_head_Multinomial(dim=3, dim_latent=latent_dim, head_name="BCR")
 
         self.flat = keras.layers.Flatten()
 
         encoder_input_size = math.prod(input_dim['SNP']) + math.prod(input_dim['BCR'])
-        self.encoder = Encoder(encoder_input_size, latent_dim) # to be implemented
+        self.encoder = Encoder(encoder_input_size, latent_dim)
 
 
     def encode(self, x_snp, x_bcr):
@@ -81,7 +81,7 @@ class Net(tf.Module):
             'log_var': log_var
         }
     
-    def loss(self, data, outputs, counts):
+    def loss(self, data, outputs):
 
         mu = outputs['mu']
         log_var = outputs['log_var']
@@ -91,7 +91,6 @@ class Net(tf.Module):
         bcr_loss = self.bcr_head.loss(data=data.bcr, latent=latent)
         rec_loss = snp_loss + bcr_loss
 
-        # Compute KL divergence loss
         kl_loss = -0.5 * tf.reduce_sum(1 + log_var - tf.square(mu) - tf.exp(log_var), axis=1)
 
         print(kl_loss)
