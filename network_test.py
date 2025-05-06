@@ -1,98 +1,104 @@
 # class FACTMx_head_Multinomial(FACTMx_head) -> dim : liczba kategori - 1 (scRNA -> 1) BCR-> 3
 import tensorflow as tf
+import tensorflow_probability as tfp
 from tensorflow import keras
-from FACTMx.FACTMx_head import FACTMx_head_Multinomial
-import math
+from FACTMx.FACTMx_head import FACTMx_head, FACTMx_head_Bernoulli
+from FACTMx.FACTMx_encoder import FACTMx_encoder
+from FACTMx.FACTMx_model import FACTMx_model
 
 
-class Encoder(tf.Module):
+class FACTMx_head_Multinomial(FACTMx_head):
 
-    def __init__(self, input_dim, latent_dim):
-        
-        self.layers = keras.Sequnetial([
-            keras.layers.Dense(1024, acitvation='relu'),
-            keras.layers.Dense(512, acitvation='relu'),
-            keras.layers.Dense(128, acitvation='relu'),
-            keras.layers.Dense(64, acitvation='relu'),
-        ])
-
-        self.mu = keras.layers.Dense(latent_dim, acitvation='relu')
-        self.logvar = keras.layers.Dense(latent_dim, acitvation='relu')
-
-    
-    def call(self, x):
-
-        x = self.layers(x)
-
-        mu = self.mu(x)
-        logvar = self.lagvar(x)
-
-        return mu, logvar
-    
-
-
-class Net(tf.Module):
+    head_type = 'Multinomial'
 
     def __init__(self,
-                 input_dim: dict, # {'SNP': (# SNP, 2), 'BCR': (# BCR length, 4)}
-                 latent_dim: int
-                ):
-        
-        self.snp_head = FACTMx_head_Multinomial(dim=1, dim_latent=latent_dim, head_name="SNP")
-        self.bcr_head = FACTMx_head_Multinomial(dim=3, dim_latent=latent_dim, head_name="BCR")
+                 dim_pos,
+                 dim_cat,
+                dim, dim_latent, head_name,
+                layer_configs={'logits':'linear'},
+                eps = 1E-3, 
+                **kwargs):
+        super().__init__(dim, dim_latent, head_name)
+        self.eps = eps
+        self.dim_pos = dim_pos
+        self.dim_cat = dim_cat
+        self.layers = {}
 
-        self.flat = keras.layers.Flatten()
+        logits_config = layer_configs.pop('logits', 'linear')
 
-        encoder_input_size = math.prod(input_dim['SNP']) + math.prod(input_dim['BCR'])
-        self.encoder = Encoder(encoder_input_size, latent_dim)
+        if logits_config == 'linear':
+            self.layers['logits'] = tf.keras.Sequential(
+                                    [tf.keras.Input(shape=(self.dim_latent,)),
+                                    tf.keras.layers.Dense(self.dim)]
+                            )
+        else:
+            self.layers['logits'] = tf.keras.Sequential.from_config(logits_config)
 
+        assert self.layers['logits'].output_shape == (None, self.dim)
+        assert self.layers['logits'].input_shape == (None, self.dim_latent)
 
-    def encode(self, x_snp, x_bcr):
-        snp_encoded = self.snp_head.encode(x_snp)
-        bcr_encoded = self.bcr_head.encode(x_bcr)
+        self.t_vars = self.layers['logits'].trainable_variables
 
-        encoder_input = tf.concat(self.flat(snp_encoded), bcr_encoded, axis=0)
+    def decode_params(self, latent):
+        #decode logits from a latent point
+        return tf.reshape(self.layers['logits'](latent), shape=(-1, self.dim_pos, self.dim_cat))
 
-        mu, log_var = self.encoder(encoder_input)
+    def make_decoder(self, latent, counts):
+        #return the decoding distribution given its latent point
+        logits = self.decode_params(latent)
+        padded_logits = tf.pad(logits,
+                            tf.constant([[0, 0], [0, 0], [1, 0]]),
+                            'CONSTANT')
+        return tfp.distributions.Multinomial(total_count=counts, logits=padded_logits)
 
-        return mu, log_var
+    def decode(self, latent, data):
+        #decode a sample from latent
+        counts = data[1]
+        return self.make_decoder(latent, counts).sample()
 
-    def decode(self, z):
-        snp_decoded = self.snp_head.decode(z)
-        bcr_decoded = self.bcr_head.decode(z)
+    def encode(self, data):
+        #give logits to encode
+        logits = tf.math.log(data[0] + self.eps)
+        normalized = logits[:,1:] - tf.reshape(logits[:,0], shape=(-1,1))
+        return {'encoder_input': normalized}
 
-        return snp_decoded, bcr_decoded
-    
-    def _reparametrization(self, mu: tf.Tensor, log_var: tf.Tensor) -> tf.Tensor:
-        eps = tf.random.normal(log_var.shape)
-        z = mu + eps*tf.exp(log_var/2.0)
-        return z
-    
-    def call(self, x):
+    def loss(self, data, latent, beta=1):
+        #return -loglikelihood of data given its latent point
+        observations, counts = data
+        log_prob = self.make_decoder(latent, counts).log_prob(observations)
 
-        mu, log_var = self.encode(x)
-        z = self._reparametrization(mu, log_var)
-        snp_decoded, bcr_decoded = self.decode(z)
+        loss = -tf.reduce_sum(log_prob) / data.shape[0]
+        loss += tf.reduce_sum(self.layers['logits'].losses)
 
-        return {
-            'snp': snp_decoded,
-            'bcr': bcr_decoded,
-            'mu': mu,
-            'log_var': log_var
+        return loss 
+
+    def get_config(self):
+        config = {
+            'head_type': self.head_type,
+            'dim_pos': self.dim_pos,
+            'dim_cat': self.dim_cat,
+            'dim': self.dim,
+            'dim_latent': self.dim_latent,
+            'head_name': self.head_name,
+            'layer_configs': {'logits': self.layers['logits'].get_config()}
         }
+        return config
+
+    def from_config(config):
+        return FACTMx_head_Multinomial(**config)
     
-    def loss(self, data, outputs):
 
-        mu = outputs['mu']
-        log_var = outputs['log_var']
-        latent = mu + tf.zeros_like(log_var) * tf.exp(log_var / 2.0)
+LATENT_DIM = 5
+SNP_DIM = (100, 1)
+BCR_DIM = (300, 3)
 
-        snp_loss = self.snp_head.loss(data=data.snp, latent=latent)
-        bcr_loss = self.bcr_head.loss(data=data.bcr, latent=latent)
-        rec_loss = snp_loss + bcr_loss
 
-        kl_loss = -0.5 * tf.reduce_sum(1 + log_var - tf.square(mu) - tf.exp(log_var), axis=1)
+snp_head = FACTMx_head_Multinomial(dim_pos=SNP_DIM[0], dim_cat=SNP_DIM[1], dim=1, dim_latent=LATENT_DIM, head_name="SNP").get_config()
+bcr_head = FACTMx_head_Multinomial(dim_pos=BCR_DIM[0], dim_cat=BCR_DIM[1], dim=3, dim_latent=LATENT_DIM, head_name="BCR").get_config()
 
-        print(kl_loss)
 
-        return rec_loss + kl_loss
+main_encoder = FACTMx_encoder(LATENT_DIM, [(SNP_DIM[0]*SNP_DIM[1]), (BCR_DIM[0]* BCR_DIM[1])]).get_config()
+model = FACTMx_model(LATENT_DIM, [snp_head, bcr_head], main_encoder)
+
+
+print(model.get_config())

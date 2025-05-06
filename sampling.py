@@ -1,6 +1,7 @@
 import tensorflow as tf
 import tensorflow_probability as tfp
 
+
 def create_hyperclusters(alpha: float, num_points: int) -> list:
     """
     Generates hyperclusters based on the Chinese Restaurant Process.
@@ -198,10 +199,10 @@ def sample_data(
     metadata["clone"] = [metadata["clone"][i] for i in permutation]
 
     return {
-        "BCR": BCR,
+        "BCR": BCR,  # train
         'BCR_profiles': BCR_profiles,
-        "reads_counts": reads_counts,
-        "mutation_counts": mutation_counts,
+        "reads_counts": reads_counts,  # train
+        "mutation_counts": mutation_counts,  # train
         "clone_profiles": clones_profiles,
         'omega': omega,
         "hc_clone": hc_clone,
@@ -210,5 +211,3 @@ def sample_data(
         "theta0": theta0,
         "theta1": theta1,
     }
-
-data = sample_data(n_cells=200)
