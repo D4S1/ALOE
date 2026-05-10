@@ -1,8 +1,6 @@
-# class FACTMx_head_Multinomial(FACTMx_head) -> dim : liczba kategori - 1 (scRNA -> 1) BCR-> 3
 import tensorflow as tf
 import tensorflow_probability as tfp
-from tensorflow import keras
-from FACTMx.FACTMx_head import FACTMx_head, FACTMx_head_Bernoulli
+from FACTMx.FACTMx_head import FACTMx_head
 from FACTMx.FACTMx_encoder import FACTMx_encoder
 from FACTMx.FACTMx_model import FACTMx_model
 

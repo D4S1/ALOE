@@ -1,0 +1,45 @@
+name: factmx
+channels:
+  - conda-forge
+  - defaults
+
+dependencies:
+  - python=3.10
+  - pip
+
+  # Core scientific stack (via conda for better binary compatibility)
+  - numpy=1.26.4        # pinned <2.0 — TF 2.15 is not compatible with NumPy 2.x
+  - pandas=2.2.3
+  - matplotlib=3.9.4
+  - seaborn=0.13.2
+  - scikit-learn=1.6.1
+
+  # Build tools (needed for some pip installs)
+  - git
+
+  - pip:
+      # TensorFlow + TensorFlow Probability (CPU; swap for tensorflow[and-cuda] for GPU)
+      - tensorflow==2.15.1
+      - tensorflow-probability==0.23.0
+
+      # UMAP
+      - umap-learn==0.5.12
+
+      # Plotly
+      - plotly==5.24.1
+
+      # Graph / community detection
+      - python-igraph==0.11.9
+      - leidenalg==0.10.2
+
+      # Levenshtein distance
+      - python-Levenshtein==0.27.3
+
+      # Jupyter kernel support
+      - ipykernel==6.29.5
+
+      # Templating
+      - jinja2==3.1.6
+
+      # FACTMx (installed from GitHub)
+      - "git+https://github.com/KazikOrzechowski/FACTMx.git#egg=FACTMx"

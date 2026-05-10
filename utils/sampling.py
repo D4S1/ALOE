@@ -1,5 +1,9 @@
 import tensorflow as tf
 import tensorflow_probability as tfp
+import numpy as np
+import pickle
+import pandas as pd
+import os
 
 
 def create_hyperclusters(alpha: float, num_points: int) -> list:
@@ -42,53 +46,53 @@ def sample_hypercluster_bcr(gene_len: int, n_cells: int, BCR_prior: list) -> tup
 
     return sample_bcrs, brc_profile
 
-def sample_reads_matrix(n_snp: int, n_cells: int, avg_reads_num: int) -> tf.Tensor:
+def sample_reads_matrix(n_SNV: int, n_cells: int, avg_reads_num: int) -> tf.Tensor:
     """
     Samples a reads matrix from a Poisson distribution.
 
-    :param n_snp: Number of SNP locations.
+    :param n_SNV: Number of SNV locations.
     :param n_cells: Number of cells to generate reads for.
-    :param avg_reads_num: Average number of reads per SNP location.
-    :return: Tensor of shape (n_snp, n_cells) representing the reads matrix.
+    :param avg_reads_num: Average number of reads per SNV location.
+    :return: Tensor of shape (n_cells, n_SNV) representing the reads matrix.
     """
-    return tf.random.poisson(lam=avg_reads_num, shape=[n_snp, n_cells])
+    return tf.random.poisson(lam=avg_reads_num, shape=[n_cells, n_SNV])
 
-def sample_clone_profile(n_snp: int, n_clones: int, mutation_rate: float, clone_relax_rate: float) -> tuple:
+def sample_clone_profile(n_SNV: int, n_clones: int, mutation_rate: float, clone_relax_rate: float) -> tuple:
     """
     Samples the clone mutation profile using Binomial distributions.
 
-    :param n_snp: Number of SNP locations.
+    :param n_SNV: Number of SNV locations.
     :param n_clones: Number of clones.
-    :param mutation_rate: Probability of mutation at each SNP location.
+    :param mutation_rate: Probability of mutation at each SNV location.
     :param clone_relax_rate: Relaxation rate for mutations, adjusting probabilities.
     :return: Tuple with 
-        [0] Tensor of shape (n_snp, n_clones) representing mutation profiles for each clone,
+        [0] Tensor of shape (n_SNV, n_clones) representing mutation profiles for each clone,
             where 1 indicates a mutation and 0 indicates no mutation
-        [1] Tensor of shape (n_snp, n_clones) representing the initial mutation probabilities before relaxation.
+        [1] Tensor of shape (n_SNV, n_clones) representing the initial mutation probabilities before relaxation.
     """
-    omega = tfp.distributions.Binomial(total_count=1, probs=mutation_rate).sample([n_snp, n_clones])
+    omega = tfp.distributions.Binomial(total_count=1, probs=mutation_rate).sample([n_SNV, n_clones])
     probs = tf.abs(omega - clone_relax_rate)
 
     return tfp.distributions.Binomial(total_count=1, probs=probs).sample(), omega
 
 def sample_mutation_matrix(
-    reads_counts: tf.Tensor,  # shape (n_snp, n_cells)
+    reads_counts: tf.Tensor,
     hyperclusters: list,
-    hc_clone: tf.Tensor,  # shape (n_hc,)
-    clones_profiles: tf.Tensor,  # shape (n_snp, n_clones)
-    theta0: tf.Tensor,  # scalar
-    theta1: tf.Tensor,  # shape (n_snp, 1)
-) -> tf.Tensor:  # shape (n_snp, n_cells)
+    hc_clone: tf.Tensor,
+    clones_profiles: tf.Tensor,
+    theta0: tf.Tensor,
+    theta1: tf.Tensor,
+) -> tf.Tensor:
     """
     Samples the mutation matrix based on clone profiles and hyperclusters.
 
-    :param reads_counts: Tensor of shape (n_snp, n_cells) representing the reads matrix.
+    :param reads_counts: Tensor of shape (n_cells, n_SNV) representing the reads matrix.
     :param hyperclusters: List of sizes of hyperclusters.
     :param hc_clone: Tensor of shape (n_hc,) mapping each hypercluster to a clone index.
-    :param clones_profiles: Tensor of shape (n_snp, n_clones), mutation profiles for each clone.
+    :param clones_profiles: Tensor of shape (n_SNV, n_clones), mutation profiles for each clone.
     :param theta0: Scalar Tensor, mutation rate when no mutation occurs.
-    :param theta1: Tensor of shape (n_snp, 1), mutation rate when a mutation occurs.
-    :return: Tensor of shape (n_snp, n_cells) representing the mutation matrix.
+    :param theta1: Tensor of shape (n_SNV, 1), mutation rate when a mutation occurs.
+    :return: Tensor of shape (n_cells, n_SNV) representing the mutation matrix.
     """
     probs = []
     for size, clone in zip(hyperclusters, hc_clone):
@@ -97,7 +101,7 @@ def sample_mutation_matrix(
         )
         hc_c = hc_c * theta1 + (1 - hc_c) * theta0
         probs.append(hc_c)
-    probs = tf.concat(probs, axis=1)
+    probs = tf.transpose(tf.concat(probs, axis=1))
 
     return tfp.distributions.Binomial(total_count=reads_counts, probs=probs).sample()
 
@@ -120,21 +124,21 @@ def sample_data(
     :param n_cells: Total number of cells.
     :param BCR_len: Length of the BCR gene sequences.
     :param n_clones: Number of distinct clones.
-    :param n_mutation: Number of SNP locations to analyze.
+    :param n_mutation: Number of SNV locations to analyze.
     :param BCR_prior: Prior probabilities for the Dirichlet distribution.
     :param alpha: Concentration parameter for hypercluster generation.
     :param clone_relax_prior: Prior for the Beta distribution to sample clone relaxation rates.
     :param theta0_prior: Prior for the Beta distribution for theta0.
     :param theta1_prior: Prior for the Beta distribution for theta1.
-    :param mutation_rate: Probability of mutation at each SNP location.
-    :param avg_reads_num: Average number of reads per SNP location.
+    :param mutation_rate: Probability of mutation at each SNV location.
+    :param avg_reads_num: Average number of reads per SNV location.
     :return: Dictionary containing:
         - BCR: Tensor of shape (n_cells, BCR_len, 4), one-hot encoded BCR sequences.
         - BCR_profiles: Tensor of shape (n_hypercluster, BCR_len, 4), BCR profiles for each cell
         - reads_counts: Tensor of shape (n_mutation, n_cells), sampled reads matrix.
         - mutation_counts: Tensor of shape (n_mutation, n_cells), mutation matrix.
         - clone_profiles: Tensor of shape (n_mutation, n_clones), mutation profiles for clones.
-        - omega: Tensor of shape (n_snp, n_clones), initial mutation probabilities before relaxation.
+        - omega: Tensor of shape (n_SNV, n_clones), initial mutation probabilities before relaxation.
         - hc_clone: Tensor mapping hyperclusters to clone indices.
         - metadata: Dictionary with hypercluster and clone assignments for each cell.
         - relax_rate: Relaxation rate sampled from Beta distribution.
@@ -164,13 +168,13 @@ def sample_data(
 
     # Reads
     reads_counts = sample_reads_matrix(
-        n_snp=n_mutation, n_cells=n_cells, avg_reads_num=avg_reads_num
+        n_SNV=n_mutation, n_cells=n_cells, avg_reads_num=avg_reads_num
     )
 
     # Clone profiles
     clone_relax_rate = tfp.distributions.Beta(*clone_relax_prior).sample()
     clones_profiles, omega = sample_clone_profile(
-        n_snp=n_mutation,
+        n_SNV=n_mutation,
         n_clones=n_clones,
         mutation_rate=mutation_rate,
         clone_relax_rate=clone_relax_rate,
@@ -192,11 +196,11 @@ def sample_data(
     permutation = tf.random.shuffle(tf.range(n_cells))
 
     BCR = tf.gather(BCR, permutation, axis=0)
-    reads_counts = tf.gather(reads_counts, permutation, axis=1)
-    mutation_counts = tf.gather(mutation_counts, permutation, axis=1)
+    reads_counts = tf.gather(reads_counts, permutation, axis=0)
+    mutation_counts = tf.gather(mutation_counts, permutation, axis=0)
 
     metadata["hypercluster"] = [metadata["hypercluster"][i] for i in permutation]
-    metadata["clone"] = [metadata["clone"][i] for i in permutation]
+    metadata["clone"] = [int(metadata["clone"][i]) for i in permutation]
 
     return {
         "BCR": BCR,  # train
@@ -211,3 +215,25 @@ def sample_data(
         "theta0": theta0,
         "theta1": theta1,
     }
+
+
+def save_data(data: dict, path: str) -> None:
+    """
+    Saves the generated data to a specified path.
+
+    :param data: Dictionary containing the data to be saved.
+    :param path: File path where the data should be saved.
+    """
+    os.makedirs(path, exist_ok=True)
+    # Save counts
+    pd.DataFrame(data["reads_counts"]).to_csv(path + "/A.csv")
+    pd.DataFrame(data["mutation_counts"]).to_csv(path + "/D.csv")
+    np.save(path + "/BCR.npy", data["BCR"])
+    pd.DataFrame(data["metadata"]).to_csv(path + "/metadata.csv")
+    with open(path + "/data.pkl", "wb") as f:
+        pickle.dump(data, f)
+
+
+
+data = sample_data(n_cells=6000, n_clones=4, n_mutation=160, BCR_len=700)
+save_data(data, "dane/synthetic_data")
