@@ -1,0 +1,56 @@
+\chapter{Materials and methods}
+
+\section{Data}
+\subsection{Sample collection and sequencing}
+ TO BE PARAPHRASED
+ 
+Samples with histologically confirmed infiltration of follicular lymphoma (FL) grade 1-2 were
+collected under authorization of applicable biobank regulations of Leiden University Medical Center and the Ethical Committee of Leiden University Medical Center (reference HEM 008/SH/sh).
+Excisional lymph node biopsies were processed immediately by gentle mechanical disruption and mesh filtration.
+Single cell suspensions were frozen in 10\% DMSO and remaining tissue fractions were cultured in low-glucose (1g/L) DMEM with 8\% fetal bovine serum to obtain adherent cell cultures for isolation of DNA of cells representing normal counterpart.
+Cell processing, library preparation and sequencing FL cells were thawed and purified by flowcytometry using anti-CD19-APC (Becton Dickinson, Franklin Lakes, NJ) and anti-CD10-PECy7 (Becton Dickinson) followed by removal of dead cells (MACS Dead Cell Removal Kit, Miltenyi Biotech, Bergisch Gladbach, Germany).
+For whole exome sequencing, DNA was isolated from 1 · 10 6 purified FL cells and from 0.5 · 10 6 cultured adherent cells (Allprep DNA/RNA Mini Kit, Qiagen, Hilden, Germany).
+Whole exomes were sequenced using SureSelect Human All Exon V7 baits (Agilent, Santa Clara, CA). Adherent cells representing normal cells were sequenced at 50x coverage.
+To discriminate between early clonal variants and more recently acquired subclonal variants as putative drivers of distinct clones, FL bulk DNA was sequenced at 1500x coverage to allow reliable calling of rare variants down to a variant allele frequency (VAF) of 0.02.
+For 5’ based single cell transcriptome sequencing, 1 · 105 similarly purified viable cells were loaded on a Chromium X single cell device to generate cDNA libraries for an expected 6 · 103 - 8 · 103 cells per sample. 
+The amplified library is split in 3 fractions for 1) full transcriptome sequencing, 2) enrichment of BCR transcripts followed by full length sequencing, 3) targeted resequencing of subclonal somatic variants. Sequencing for WES and single cells was performed on HiSeq2500 or HiSeq4000 devices.
+
+\subsection{Data processing}
+ TO BE PARAPHRASED
+ 
+FASTQ files from whole exome sequencing (WES) were processed using the Sarek workflow v2.7
+and aligned to the human reference genome GRCh38 using Burrows Wheeler Algorithm (BWA)
+v0.7.17. [33, 34] Duplicated mapped reads were marked, local realignment of regions flanking
+indels and recalibration of base quality scores were performed to obtain more accurate bases
+according to the Genome Analysis ToolKit (GATK) best practices version v4.1.7.0. [35] Sin-
+gle nucleotide variants (SNV) and short insertions and deletions (INDELS) were called using
+Strelka2 v2.9.10. [36] Only high confidence variants defined by quality scores (GQX) of at least
+15 for SNV and 30 for INDELS were kept. Pathogenecity of variants was determined using
+the Geneticist Assistant NGS Interpretive Workbench (SoftGenetics) based on publicly avail-
+able variant-databases (dbSNP, ClinVar, and COSMIC) and literature, into class 1 (benign),
+class 2 (likely benign), class 3 (unknown significance), class 4 (likely pathogenic), or class 5
+(pathogenic) [37–39].
+20
+Variant selection for CaClust modeling
+We chose only somatic single nucleotide variants called from Strelka that could also be observed
+in the scRNA data of the cells with complete BCR heavy and light chain sequences, and that
+showed at least one alternate read across the cells.
+Some germline variants were present in the Strelka output, as they had an increased frequency
+of the alternate nucleotide over the normal sample. We chose to include only those variants that
+showed over 3-fold increase in the frequency of the alternate nucleotide between the normal and
+tumour sample. The full table of included variants per sample can be seen in Additional File 3:
+Output profiles
+
+\subsection{Generating sample data}
+- hyperclusters -> Chinese restaurant process
+- hc to clone assignment -> categorical distribution
+- bcr sequence -> generate bcr profile using dirichlet distribution for each hypercluster, ans then sample sequence from
+categorical distribution across ATGC with probabilities from the profile
+- generate raw counts of genes using poisson distribution -> should be NB in fact ;)
+- generate clone profiles using binomial distribution
+- generate mutation  ounts matrix
+
+\section{Quick introduction to variation auto encoder}
+\section{Loss function approach}
+\section{Model 1 description}
+\section{Model 2 description}

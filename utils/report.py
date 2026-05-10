@@ -4,12 +4,7 @@ from datetime import datetime
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-
-# ---------------------------------------------------------------------------
-# Config — edit here, not inside the function
-# ---------------------------------------------------------------------------
-
-REPORT_TEMPLATE_PATH  = "report_template_v3.html"   # path to uploaded template
+REPORT_TEMPLATE_PATH  = "templates/report_template_v3.html"   # path to uploaded template
 
 # ---------------------------------------------------------------------------
 # Architecture decoder
@@ -88,9 +83,9 @@ def _parse_architecture(label: str) -> dict:
     }
 
 
-def create_model_report_v2(
+def create_model_report(
     label: str,
-    fig_path: str,
+    input_dir: str,
     output_html: str | None = None,
     extra_notes: str = "",
     simulated: bool = False,
@@ -114,14 +109,14 @@ def create_model_report_v2(
                            Default: (0.50, 0.80)
     """
 
-        # ── Output paths ────────────────────────────────────────────────────────
-    root_dir   = os.path.dirname(fig_path)
-    report_dir = os.path.join(root_dir, "reports")
+    # ── Output paths ────────────────────────────────────────────────────────
+    report_dir = os.path.join(input_dir, "reports")
     os.makedirs(report_dir, exist_ok=True)
 
     if output_html is None:
         output_html = os.path.join(report_dir, f"{label}_report.html")
 
+    fig_path = input_dir / f'figs/{label}'
     rel_prefix = os.path.relpath(fig_path, report_dir)
 
     # ── Architecture from label ──────────────────────────────────────────────

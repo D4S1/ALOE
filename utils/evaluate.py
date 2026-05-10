@@ -5,6 +5,7 @@ import pandas as pd
 from sklearn.metrics import adjusted_rand_score
 import os
 import json
+from pathlib import Path
 
 from utils.preprocessing import prep_data
 import utils.visualization as viz
@@ -118,17 +119,18 @@ def _avg_genotype_accuracy(
 def evaluate_model(model: FACTMx_model|str,
                    sample:str,
                    data: tuple|None=None,
+                   data_path: Path|None="",
                    annotation: pd.DataFrame|None=None,
                    model_label:str="",
-                   save_figs:str='',
+                   input_dir:Path=Path(''),
                    simulated: bool=False,
                    mut_threshold: float=0.9,
                    ):
     label = f"{sample}_{model_label}"
-    data, bcr_df = data if data is not None else prep_data(f'data/{sample}', simulated=simulated)
-    annotation = annotation if annotation is not None else pd.read_csv(f'annotation/{sample}_clustering.csv', index_col=0)
+    data, bcr_df = data if data is not None else prep_data(data_path, simulated=simulated)
+    annotation = annotation if annotation is not None else pd.read_csv(input_dir / f'annotations/{sample}_clustering.csv', index_col=0)
 
-    if isinstance(model, str):
+    if isinstance(model, (str, Path)):
         model = FACTMx_model.load(model)
 
     latent = model.get_latent_representation(data['dataset']).numpy()
@@ -136,6 +138,7 @@ def evaluate_model(model: FACTMx_model|str,
     (snv, counts), (bcr, ones) = data['dataset']
     dist_snv, dist_bcr = [head.make_decoder(latent, counts) for head in model.heads]
 
+    save_figs = input_dir / f'figs/{label}'
     os.makedirs(save_figs, exist_ok=True)
 
     # BCR
@@ -160,7 +163,7 @@ def evaluate_model(model: FACTMx_model|str,
       annotation = _map_prediction2ref(annotation, label=f"{model_label}_jaccard_clone", ref_col="clone", inplace=False)
       viz.plot_latent(latent, bcr_df.clone, 'Clone', label, save_figs)
       viz.cell2clone_acc(annotation, save_figs, label, true_col='clone', pred_col='clone_hat')
-      clones_genotypes = np.load(os.path.join(f"data/{sample}", 'clone.npy'))
+      clones_genotypes = np.load(data_path / 'clone.npy')
       _avg_genotype_accuracy(annotation,
                             counts=snv,
                             genotypes=clones_genotypes,

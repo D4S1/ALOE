@@ -1,0 +1,107 @@
+%
+% Niniejszy plik stanowi przykład formatowania pracy magisterskiej na
+% Wydziale MIM UW.  Szkielet użytych poleceń można wykorzystywać do
+% woli, np. formatujac wlasna prace.
+%
+% Zawartosc merytoryczna stanowi oryginalnosiagniecie
+% naukowosciowe Marcina Wolinskiego.  Wszelkie prawa zastrzeżone.
+%
+% Copyright (c) 2001 by Marcin Woliński <M.Wolinski@gust.org.pl>
+% Poprawki spowodowane zmianami przepisów - Marcin Szczuka, 1.10.2004
+% Poprawki spowodowane zmianami przepisow i ujednolicenie 
+% - Seweryn Karłowicz, 05.05.2006
+% Dodanie wielu autorów i tłumaczenia na angielski - Kuba Pochrybniak, 29.11.2016
+
+% dodaj opcję [licencjacka] dla pracy licencjackiej
+% dodaj opcję [en] dla wersji angielskiej (mogą być obie: [licencjacka,en])
+\documentclass[magisterska,en]{pracamgr}
+
+% Dane magistranta:
+\autor{Joanna Dąbrowska}{438446}
+
+\title{Modeling Genotype to Transcription Interactions in Follicular Lymphoma Using Variational Autoencoder}
+\titlepl{Modelowanie zależności między genotypem a transkrypcją w chłoniaku grudkowym z wykorzystaniem wariacyjnego autoenkodera}
+
+% \title{Learning Clonal Architecture of Follicular Lymphoma from Genotype Using a Variational Autoencoder}
+% \titlepl{Modelowanie architektury klonalnej chłoniaka grudkowego na podstawie genotypu z wykorzystaniem wariacyjnego autoenkodera}
+
+%kierunek: 
+\kierunek{Bioinformatics and Systems Biology}
+
+
+% Praca wykonana pod kierunkiem:
+% (podać tytuł/stopień imię i nazwisko opiekuna
+% Instytut
+% ew. Wydział ew. Uczelnia (jeżeli nie MIM UW))
+\opiekun{dr. Małgorzata Łazęcka\\
+  Institute of Informatics\\
+  }
+
+% miesiąc i~rok:
+\date{September 2024}
+
+%Podać dziedzinę wg klasyfikacji Socrates-Erasmus:
+\dziedzina{
+11.3 Informatics, Computer Science
+}
+
+%Klasyfikacja tematyczna wedlug AMS (matematyka) lub ACM (informatyka)
+\klasyfikacja{Applied computing\\
+\hspace*{1em} Life and medical sciences\\
+\hspace*{2em} Bioinformatics}
+
+% Słowa kluczowe:
+\keywords{neural networks, oncology, single cell sequencing, variation autoencoders, VAE}
+
+% Tu jest dobre miejsce na Twoje własne makra i~środowiska:
+\newtheorem{defi}{Definicja}[section]
+\usepackage{textgreek}
+\usepackage{hyperref}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{longtable}
+\usepackage{booktabs}      % Optional for better horizontal rules
+\usepackage[table, dvipsnames]{xcolor} % Optional for coloring
+\usepackage{amsmath}
+\usepackage{accents}
+\usepackage{csquotes}
+\usepackage[
+backend=biber,
+style=nature,
+]{biblatex}
+\addbibresource{master.bib}
+% koniec definicji
+
+\begin{document}
+\maketitle
+
+%tu idzie streszczenie na strone poczatkowa
+\include{body/abstract}
+
+\tableofcontents
+
+\include{body/introduction}
+\include{body/materials_and_methods}
+\include{body/results}
+\include{body/discussion}
+
+\cleardoublepage
+\addcontentsline{toc}{chapter}{Bibliography}
+% \bibliographystyle{abbrv}
+% \bibliography{master}
+\printbibliography
+
+\cleardoublepage
+\addcontentsline{toc}{chapter}{List of figures}
+\listoffigures
+
+\cleardoublepage
+\addcontentsline{toc}{chapter}{List of tables}
+\listoftables
+
+% \appendix
+% \include{A_supplementary_graphics}
+% \include{B_params_table}
+% \include{C_markers_table}
+
+\end{document}

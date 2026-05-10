@@ -1,0 +1,79 @@
+\chapter{Introduction}
+
+\section{General introduction to the topic}
+
+TODO
+
+\section{Biological background}
+
+\subsection{B cell lifecyle}
+
+TB cells are an essential component of adaptive immunity, responsible for producing antibodies. Their development must be tightly regulated to generate a highly diverse range of antibodies (repertoire diversity) while ensuring the cells do not attack the body's own tissues (immune tolerance).
+This developmental progression begins in the bone marrow, where hematopoietic stem cells differentiate into common lymphoid progenitors to seed the B-cell lineage.
+
+Lineage commitment is driven by a network of transcription factors and microenvironmental cues that guide the cells through distinct developmental phases. During the pro-B stage, cells initiate V(D)J recombination to rearrange their immunoglobulin heavy chains.
+Upon successful heavy-chain rearrangement, they transition to the pre-B stage to rearrange their light chains.
+Once a complete, functional receptor is formed, these newly generated immature B cells leave the bone marrow and migrate to peripheral lymphoid organs, such as the spleen, to complete their maturation.
+
+When these mature B cells encounter an antigen in secondary lymphoid organs, they are triggered to form germinal centers (GCs).
+Within these specialized microenvironments, B cells undergo rapid proliferation and activation-induced cytidine deaminase (AID)–dependent modifications, specifically somatic hypermutation (SHM) and class-switch recombination.
+Following these genetic modifications, the cells undergo stringent selection; only the clones with the highest affinity for the antigen survive to exit the GC as memory B cells or plasma cells.
+
+Given that GC reactions deliberately introduce DNA breaks and point mutations into immunoglobulin genes to optimize antigen affinity, off-target mutations are an unavoidable byproduct.
+Consequently, this AID-mediated mutagenesis is the primary mechanism by which B cells acquire secondary, oncogenic lesions that can initiate or promote lymphoma.
+In summary, while the bone marrow establishes the foundational B-cell repertoire, the germinal centers act as both the crucible for functional optimization and the primary site for oncogenic mutagenesis. \cite{murphy_janeways_2017}
+
+
+\subsection{Follicular lymphoma}
+
+Follicular lymphoma (FL) is an indolent neoplasm derived from germinal center (GC) B cells, defined by its characteristic nodal architecture of abnormal follicles and by the persistence of a GC-like transcriptional program that circumvents normal selection and exit mechanisms \cite{krull_follicular_2024}. The hallmark initiating lesion in the majority of cases is the t(14;18)(q32;q21) translocation.
+This rearrangement places the anti-apoptotic gene BCL2 under the control of the Immunoglobulin Heavy Chain (IGH) locus enhancers.
+Since the IGH locus is constitutively and highly active in B cells to support antibody production, its enhancers drive the pathological overexpression of BCL2, providing a profound survival advantage by inhibiting apoptosis.
+
+The presence of t(14;18) alone, however, is not sufficient to establish a precursor state. Small numbers of B cells carrying this rearrangement can be detected in the peripheral blood of a large proportion of healthy adults, reflecting the fact that this event often arises during normal GC reactions. These cells, although genetically altered, do not on their own represent a premalignant stage, and in most individuals they never progress.
+
+A subset of these t(14;18)-bearing cells can evolve into follicular lymphoma–like cells (FLLCs).
+These are atypical memory B cells that have transited through the GC and acquired characteristics reminiscent of centrocytes, including CD10+/–, CXCR4$^{\text{low}}$, CD27+, Ki67$^{\text{low}}$, and BCL6 expression, along with molecular footprints of AID activity.
+FLLCs display the unusual combination of genomic instability and broad dissemination to lymphoid sites such as lymph nodes and bone marrow, yet they remain biologically inert with respect to malignant progression.
+One of their distinguishing features is the preferential retention of surface IgM expression, even when the nonproductive allele has undergone class switching, suggesting selective pressure to maintain IgM-mediated signaling. \cite{carbone_follicular_2019}
+
+By contrast, cancer precursor cells (CPCs) represent a further evolutionary step and are considered true premalignant entities.
+CPCs accumulate cooperating mutations in epigenetic regulators, as well as transcriptional factors and immune modulators.
+These alterations lock the cells in a GC-like program while progressively eroding normal checkpoints of differentiation and selection.
+Unlike FLLCs, CPCs are committed to eventual lymphomagenesis and provide the pool from which clinically overt FL arises.
+Importantly, CPCs also function as the genetic reservoir for relapse and transformation.
+While early relapses may emerge through linear evolution of the dominant FL clone, late relapses and transformation events typically reflect divergent evolution from a shared CPC ancestor that has branched into genetically distinct sublineages \cite{carbone_follicular_2019}.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.9\linewidth]{figures/FL_development.pdf}
+    \caption{The Stepwise Evolutionary Landscape of Follicular Lymphoma.}
+    The development of FL is a long-term process that spans years of subclinical disease. (Left) The process starts with t(14;18) translocations occurring during early B-cell development in the bone marrow or during primary germinal center (GC) reactions. This rearrangement leads to BCL2 overexpression, which prevents apoptosis in cells that would otherwise be eliminated during the normal biological selection process. (Center) These BCL2-expressing cells give rise to follicular lymphoma–like cells (FLLCs) that undergo repeated GC re-entry and spread throughout the lymphoid system. The acquisition of additional mutations, particularly in epigenetic regulators, leads to the emergence of committed cancer precursor cells (CPCs). (Right) CPCs act as a shared ancestral reservoir. While some sublineages evolve directly into the primary tumor found at diagnosis, others remain as a separate pool. This reservoir drives clinical relapse and histological transformation (t-FL) through branched evolution, explaining why relapsed disease is often genetically different from the primary tumor. Figure from \cite{carbone_follicular_2019}
+    \label{fig:fl_evolution}
+\end{figure}
+
+Once FL is clinically established, the malignant cells remain locked in a GC-like state and persist through iterative GC re-entry, ongoing AID-driven mutagenesis, and selection within the lymphoid niche.
+FL primarily involves lymph nodes but frequently extends to the bone marrow and, in some cases, to the peripheral blood.
+
+The tumor microenvironment (TME) plays a decisive role in sustaining the disease. T$_{\textit{FH}}$ cells provide CD40L, IL-4, and IL-21, which contribute to NF-κB and JAK–STAT pathway activation in tumor B cells \cite{krull_follicular_2024}\cite{carbone_follicular_2019}.
+Follicular dendritic and stromal cells produce CXCL12 and CXCL13 that support migration and survival, while macrophages together with regulatory T cells contribute to local immune suppression\cite{carbone_follicular_2019}.
+
+Tumor-intrinsic mechanisms take advantage of these interactions. N-glycosylation of the BCR enables antigen-independent signaling, which drives clonal expansion without the need for antigen recognition and increases the probability of acquiring somatic mutations. Among the most crucial of these are alterations in chromatin regulators such as CREBBP and EZH2, which promote immune evasion by mechanisms including downregulation of MHC expression. Loss of TNFRSF14 further strengthens T$_{\textit{FH}}$–stromal crosstalk, and stromal polarization by neutrophils and macrophages through NF-κB pathways reinforces the supportive niche. \cite{carbone_follicular_2019}
+
+Although usually indolent, FL carries a persistent risk of histologic transformation to an aggressive form, typically diffuse large B-cell lymphoma (DLBCL). Transformation involves the acquisition of aggressive lesions such as TP53 loss, CDKN2A/B deletion, BCL6 rearrangements, or MYC activation, which drive genomic instability, impair cell-cycle checkpoints, and reduce reliance on microenvironmental cues \cite{pasqualucci_genetics_2014}. These genetic and phenotypic changes correspond to the disappearance of follicular architecture, the emergence of diffuse growth, and clinical acceleration with extranodal spread. Whether transformation occurs through a linear accumulation of lesions in the dominant FL clone or through divergent evolution from common precursor cells, both models have been observed, and in either case the outcome is an abrupt shift from indolent to aggressive biology.
+
+\subsection{Current diagnosis and prognostic treatments} 
+
+TODO
+
+\section{the goal of the study}
+
+TODO
+- current problems
+- molecular diagnosis
+- what does it means for other/how can it help
+
+\section{Approach we will use}
+TODO
+\subsection{previous probabilistic approach - graph methods}
+\subsection{New deep learning approach}
