@@ -72,8 +72,37 @@ body {
 }
 
 /* ── grids ── */
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 .grid1 { display: grid; grid-template-columns: 1fr;     gap: 20px; }
+
+/* ── ARI metric display ── */
+.metric-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.metric-value {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 48px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -.02em;
+}
+.metric-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.metric-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: 'IBM Plex Mono', monospace;
+}
 
 /* ── cards ── */
 .card {
@@ -255,34 +284,6 @@ body {
   margin-left: 6px; vertical-align: middle;
 }
 
-/* ── ARI metric display ── */
-.metric-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-.metric-value {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 48px;
-  font-weight: 600;
-  line-height: 1;
-  letter-spacing: -.02em;
-}
-.metric-label {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-.metric-sub {
-  font-size: 11px;
-  color: var(--text-muted);
-  font-family: 'IBM Plex Mono', monospace;
-}
-
 /* ── tabs ── */
 .tabs {
   margin-bottom: 20px;
@@ -395,46 +396,40 @@ function openTab(evt, tabName) {
   <div class="section">
     <div class="section-title">Latent Space</div>
 
-    {# Row 1: two clustering plots side by side (different distance metrics) #}
+    {# Row 1: hypercluster iframe (left) + ARI metric (right) #}
     <div class="latent-grid">
-
-      <div class="card latent-card">
-        <div class="card-title">Latent Clustering — Cityblock</div>
-        <iframe src="{{ fig_path(label ~ '_latent_cityblock_clusters.html') }}"></iframe>
-      </div>
-
-      <div class="card latent-card">
-        <div class="card-title">Latent Clustering — Jaccard</div>
-        <iframe src="{{ fig_path(label ~ '_latent_jaccard_clusters.html') }}"></iframe>
-      </div>
-
-    </div>
-
-    {# Row 2: hypercluster iframe (left) + ARI metric (right) #}
-    <div class="latent-grid" style="margin-top:20px;">
-
       <div class="card latent-card">
         <div class="card-title">Latent Hyperclusters</div>
         <iframe src="{{ fig_path(label ~ '_latent_hyperclusters.html') }}"></iframe>
       </div>
-
       <div class="card latent-card metric-card">
         <div class="card-title">Hypercluster Quality</div>
         {% if hypercluster_ari is not none %}
           {%- set ari = hypercluster_ari -%}
-          <div class="metric-value {{ 'good' if ari >= 0.8 else ('warn' if ari >= 0.5 else 'bad') }}"
-               style="color: {{ 'var(--good)' if ari >= 0.8 else ('var(--warn)' if ari >= 0.5 else 'var(--bad)') }}">
+          <div class="metric-value"
+               style="color:{{ 'var(--good)' if ari >= 0.8 else ('var(--warn)' if ari >= 0.5 else 'var(--bad)') }}">
             {{ "%.3f"|format(ari) }}
           </div>
           <div class="metric-label">Adjusted Rand Index</div>
           <div class="metric-sub">vs clone ground truth</div>
         {% else %}
           <p style="color:var(--text-muted);font-size:13px;">
-            {{ label }}_hypercluster_ari.json not found.
+            hypercluster_ari not available.
           </p>
         {% endif %}
       </div>
+    </div>
 
+    {# Row 2: cityblock clustering | jaccard clustering #}
+    <div class="latent-grid" style="margin-top:20px;">
+      <div class="card latent-card">
+        <div class="card-title">Latent Clustering — Cityblock</div>
+        <iframe src="{{ fig_path(label ~ '_latent_cityblock_clusters.html') }}"></iframe>
+      </div>
+      <div class="card latent-card">
+        <div class="card-title">Latent Clustering — Jaccard</div>
+        <iframe src="{{ fig_path(label ~ '_latent_jaccard_clusters.html') }}"></iframe>
+      </div>
     </div>
 
   </div>
@@ -459,42 +454,45 @@ function openTab(evt, tabName) {
       <div class="card">
         <div class="card-title">Accuracy per Clone</div>
         {% if clone_acc %}
-          {%- set yellow_cut = clone_acc_thresholds[0] -%}
-          {%- set green_cut  = clone_acc_thresholds[1] -%}
+          {%- set yellow_cut   = clone_acc_thresholds[0] -%}
+          {%- set green_cut    = clone_acc_thresholds[1] -%}
+          {%- set metric_names = clone_acc.values() | first | list -%}
           <table class="acc-table">
             <thead>
-              <tr><th>Clone</th><th>Accuracy</th></tr>
+              <tr>
+                <th>Clone</th>
+                {% for m in metric_names %}<th>{{ m }}</th>{% endfor %}
+              </tr>
             </thead>
             <tbody>
-              {% for key, val in clone_acc.items() %}
-                {% if key != 'overall' %}
+              {% for row_key, row_vals in clone_acc.items() %}
+                {% if row_key != 'overall' %}
                 <tr>
-                  <td>{{ key.replace('_', ' ').title() }}</td>
-                  <td>
-                    {% if val >= green_cut %}
-                      <span class="badge-good">{{ "%.1f%%"|format(val * 100) }}</span>
-                    {% elif val >= yellow_cut %}
-                      <span class="badge-warn">{{ "%.1f%%"|format(val * 100) }}</span>
-                    {% else %}
-                      <span class="badge-bad">{{ "%.1f%%"|format(val * 100) }}</span>
-                    {% endif %}
-                  </td>
+                  <td>{{ row_key.replace('_', ' ').title() }}</td>
+                  {% for m in metric_names %}
+                    {%- set val = row_vals[m] -%}
+                    <td>
+                      {% if val >= green_cut %}<span class="badge-good">{{ "%.1f%%"|format(val*100) }}</span>
+                      {% elif val >= yellow_cut %}<span class="badge-warn">{{ "%.1f%%"|format(val*100) }}</span>
+                      {% else %}<span class="badge-bad">{{ "%.1f%%"|format(val*100) }}</span>
+                      {% endif %}
+                    </td>
+                  {% endfor %}
                 </tr>
                 {% endif %}
               {% endfor %}
               {% if 'overall' in clone_acc %}
-              {%- set oval = clone_acc['overall'] -%}
               <tr class="overall-row">
                 <td>Overall</td>
-                <td>
-                  {% if oval >= green_cut %}
-                    <span class="badge-good">{{ "%.1f%%"|format(oval * 100) }}</span>
-                  {% elif oval >= yellow_cut %}
-                    <span class="badge-warn">{{ "%.1f%%"|format(oval * 100) }}</span>
-                  {% else %}
-                    <span class="badge-bad">{{ "%.1f%%"|format(oval * 100) }}</span>
-                  {% endif %}
-                </td>
+                {% for m in metric_names %}
+                  {%- set val = clone_acc['overall'][m] -%}
+                  <td>
+                    {% if val >= green_cut %}<span class="badge-good">{{ "%.1f%%"|format(val*100) }}</span>
+                    {% elif val >= yellow_cut %}<span class="badge-warn">{{ "%.1f%%"|format(val*100) }}</span>
+                    {% else %}<span class="badge-bad">{{ "%.1f%%"|format(val*100) }}</span>
+                    {% endif %}
+                  </td>
+                {% endfor %}
               </tr>
               {% endif %}
             </tbody>
@@ -508,55 +506,66 @@ function openTab(evt, tabName) {
 
     </div>
 
-    {# Row 2: confusion matrix (left) + genotype accuracy table (right) #}
-    <div class="grid2" style="margin-top:20px;">
-      <div class="card" style="aspect-ratio:2/1; overflow:hidden; display:flex; flex-direction:column;">
-        <div class="card-title">Assignment Confusion Matrix</div>
+    {# Row 2: confusion matrix cityblock | confusion matrix jaccard | genotype accuracy table #}
+    <div class="grid3" style="margin-top:20px;">
+
+      <div class="card" style="overflow:hidden; display:flex; flex-direction:column;">
+        <div class="card-title">Assignment Confusion Matrix — Cityblock</div>
         <div style="flex:1; display:flex; align-items:center; justify-content:center; overflow:hidden;">
-          <img src="{{ fig_path(label ~ '_clone_acc.png') }}" style="max-height:100%; max-width:100%; width:auto; height:auto; display:block;">
+          <img src="{{ fig_path(label ~ '_cityblock_clone_acc.png') }}" style="max-height:100%; max-width:100%; width:auto; height:auto; display:block;">
         </div>
       </div>
 
-      <div class="card" style="aspect-ratio:2/1; overflow:hidden; display:flex; flex-direction:column;">
+      <div class="card" style="overflow:hidden; display:flex; flex-direction:column;">
+        <div class="card-title">Assignment Confusion Matrix — Jaccard</div>
+        <div style="flex:1; display:flex; align-items:center; justify-content:center; overflow:hidden;">
+          <img src="{{ fig_path(label ~ '_jaccard_clone_acc.png') }}" style="max-height:100%; max-width:100%; width:auto; height:auto; display:block;">
+        </div>
+      </div>
+
+      <div class="card" style="overflow:hidden; display:flex; flex-direction:column;">
         <div class="card-title">SNV Genotype Reconstruction Accuracy</div>
         {% if genotype_acc %}
-          {%- set yellow_cut = clone_acc_thresholds[0] -%}
-          {%- set green_cut  = clone_acc_thresholds[1] -%}
+          {%- set yellow_cut   = clone_acc_thresholds[0] -%}
+          {%- set green_cut    = clone_acc_thresholds[1] -%}
+          {%- set metric_names = genotype_acc.values() | first | list -%}
           <div style="overflow-y:auto; flex:1;">
             <table class="acc-table">
               <thead>
-                <tr><th>Clone</th><th>Avg Accuracy</th></tr>
+                <tr>
+                  <th>Clone</th>
+                  {% for m in metric_names %}<th>{{ m }}</th>{% endfor %}
+                </tr>
               </thead>
               <tbody>
-                {% for key, val in genotype_acc.items() %}
-                  {% if key != 'avg_acc' %}
+                {% for row_key, row_vals in genotype_acc.items() %}
+                  {% if row_key != 'avg_acc' %}
                   <tr>
-                    <td>{{ key.replace('_', ' ').title() }}</td>
-                    <td>
-                      {% if val >= green_cut %}
-                        <span class="badge-good">{{ "%.1f%%"|format(val * 100) }}</span>
-                      {% elif val >= yellow_cut %}
-                        <span class="badge-warn">{{ "%.1f%%"|format(val * 100) }}</span>
-                      {% else %}
-                        <span class="badge-bad">{{ "%.1f%%"|format(val * 100) }}</span>
-                      {% endif %}
-                    </td>
+                    <td>{{ row_key.replace('_', ' ').title() }}</td>
+                    {% for m in metric_names %}
+                      {%- set val = row_vals[m] -%}
+                      <td>
+                        {% if val >= green_cut %}<span class="badge-good">{{ "%.1f%%"|format(val*100) }}</span>
+                        {% elif val >= yellow_cut %}<span class="badge-warn">{{ "%.1f%%"|format(val*100) }}</span>
+                        {% else %}<span class="badge-bad">{{ "%.1f%%"|format(val*100) }}</span>
+                        {% endif %}
+                      </td>
+                    {% endfor %}
                   </tr>
                   {% endif %}
                 {% endfor %}
                 {% if 'avg_acc' in genotype_acc %}
-                {%- set aval = genotype_acc['avg_acc'] -%}
                 <tr class="overall-row">
                   <td>Overall Avg</td>
-                  <td>
-                    {% if aval >= green_cut %}
-                      <span class="badge-good">{{ "%.1f%%"|format(aval * 100) }}</span>
-                    {% elif aval >= yellow_cut %}
-                      <span class="badge-warn">{{ "%.1f%%"|format(aval * 100) }}</span>
-                    {% else %}
-                      <span class="badge-bad">{{ "%.1f%%"|format(aval * 100) }}</span>
-                    {% endif %}
-                  </td>
+                  {% for m in metric_names %}
+                    {%- set val = genotype_acc['avg_acc'][m] -%}
+                    <td>
+                      {% if val >= green_cut %}<span class="badge-good">{{ "%.1f%%"|format(val*100) }}</span>
+                      {% elif val >= yellow_cut %}<span class="badge-warn">{{ "%.1f%%"|format(val*100) }}</span>
+                      {% else %}<span class="badge-bad">{{ "%.1f%%"|format(val*100) }}</span>
+                      {% endif %}
+                    </td>
+                  {% endfor %}
                 </tr>
                 {% endif %}
               </tbody>
@@ -571,11 +580,19 @@ function openTab(evt, tabName) {
 
     </div>
 
-    {# Row 3: genotype reconstitution — full width, scrollable #}
+    {# Row 3: cityblock SNV accuracy — full width, scrollable #}
     <div style="margin-top:20px;">
       <div class="card wide-short-card">
-        <div class="card-title">Genotype Reconstitution Accuracy</div>
-          <iframe src="{{ fig_path(label ~ '_snv_accuracy.html') }}"></iframe>
+        <div class="card-title">Genotype Reconstitution Accuracy — Cityblock</div>
+        <iframe src="{{ fig_path(label ~ '_cityblock_snv_accuracy.html') }}"></iframe>
+      </div>
+    </div>
+
+    {# Row 4: jaccard SNV accuracy — full width, scrollable #}
+    <div style="margin-top:20px;">
+      <div class="card wide-short-card">
+        <div class="card-title">Genotype Reconstitution Accuracy — Jaccard</div>
+        <iframe src="{{ fig_path(label ~ '_jaccard_snv_accuracy.html') }}"></iframe>
       </div>
     </div>
 
@@ -650,7 +667,6 @@ function openTab(evt, tabName) {
       </div>
     </div>
   </div>
-
 
   {# ══════════════════════════════════════════════════════════ Notes #}
   <div class="section">

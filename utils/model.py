@@ -99,21 +99,6 @@ def test_models(
         )
         label_df.index = clustering_df.index
         clustering_df = pd.concat([clustering_df, label_df], axis=1)
-        plot_latent(latent,
-                    clustering_df[f"{config['name']}_cityblock_clone"],
-                    "Cityblock clusters",
-                    label=model_label,
-                    save_path=model_fig_path)
-        plot_latent(latent,
-                    clustering_df[f"{config['name']}_jaccard_clone"],
-                    "Jaccard clusters",
-                    label=model_label,
-                    save_path=model_fig_path)
-        plot_latent(latent,
-                    clustering_df[f"{config['name']}_hypercluster"],
-                    "Hyperclusters",
-                    label=model_label,
-                    save_path=model_fig_path)
 
         model.save(os.path.join(model_path, model_label))
 

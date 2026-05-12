@@ -4,7 +4,7 @@ from datetime import datetime
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-REPORT_TEMPLATE_PATH  = "templates/report_template_v3.html"   # path to uploaded template
+REPORT_TEMPLATE_PATH  = "templates/report_template_v4.html"   # path to uploaded template
 
 # ---------------------------------------------------------------------------
 # Architecture decoder
@@ -94,7 +94,7 @@ def create_model_report(
 ):
     """
     Generate a self-contained HTML model report.
-
+ 
     Parameters
     ----------
     label                : Run/sample identifier, format: {id}_V{1|2|3}_{latent}.
@@ -103,59 +103,66 @@ def create_model_report(
                            Defaults to <fig_path>/../reports/{label}_report.html.
     extra_notes          : Free-text appended to the Notes section.
     simulated            : When True, the Clone Analysis section is shown.
-    template_path        : Path to report_template.html (upload to Colab root).
+    template_path        : Path to report_template_v3.html (upload to Colab root).
     clone_acc_thresholds : (yellow_cutoff, green_cutoff) tuple.
                            < yellow → red, < green → yellow, >= green → green.
                            Default: (0.50, 0.80)
     """
-
+ 
     # ── Output paths ────────────────────────────────────────────────────────
     report_dir = os.path.join(input_dir, "reports")
     os.makedirs(report_dir, exist_ok=True)
-
+ 
     if output_html is None:
         output_html = os.path.join(report_dir, f"{label}_report.html")
 
     fig_path = input_dir / f'figs/{label}'
     rel_prefix = os.path.relpath(fig_path, report_dir)
-
+ 
     # ── Architecture from label ──────────────────────────────────────────────
     architecture = _parse_architecture(label)
+ 
+    # ── Metrics / Accuracy ───────────────────────────────────────────────────
+    json_path = fig_path / 'metrics.json'
 
-    # ── Simmulated data ──────────────────────────────────────────────────────
     clone_acc = None
     genotype_acc = None
+    hypercluster_ari = None
 
-    if simulated:
-    # ── Clone accuracy data ──────────────────────────────────────────────────
-        json_path = os.path.join(fig_path, f"{label}_clone_acc.json")
-        if os.path.exists(json_path):
-            with open(json_path) as f:
-                clone_acc = json.load(f)
-
-    # ── Genotype accuracy data ───────────────────────────────────────────────
-        json_path = os.path.join(fig_path, f"{label}_genotype_acc.json")
-        if os.path.exists(json_path):
-            with open(json_path) as f:
-                genotype_acc = json.load(f)
-
+    if json_path.exists():
+        with open(json_path) as f:
+            metrics = json.load(f)
+            clone_acc = metrics.get('clone')
+            genotype_acc = metrics.get('genotype')
+            hypercluster_ari = metrics.get('hypercluster').get('ari')
+ 
+    # ── Genotype plot file detection ─────────────────────────────────────────
+    genotype_html_exists = simulated and os.path.exists(
+        os.path.join(fig_path, f"{label}_genotype_acc.html")
+    )
+ 
+    # ── SNV accuracy Plotly figure (available for all samples) ───────────────
+    snv_accuracy_exists = os.path.exists(
+        os.path.join(fig_path, f"{label}_snv_accuracy.html")
+    )
+ 
     # ── Jinja2 environment ───────────────────────────────────────────────────
     template_dir  = os.path.dirname(os.path.abspath(template_path))
     template_file = os.path.basename(template_path)
-
+ 
     env = Environment(
         loader=FileSystemLoader(template_dir),
         autoescape=select_autoescape(disabled_extensions=("html",)),
     )
-
+ 
     # Expose fig_path helper as a callable inside the template
     def fig_path_fn(fname):
         return os.path.join(rel_prefix, fname)
-
+ 
     env.globals["fig_path"] = fig_path_fn
-
+ 
     template = env.get_template(template_file)
-
+ 
     # ── Render ───────────────────────────────────────────────────────────────
     html = template.render(
         label                 = label,
@@ -165,10 +172,13 @@ def create_model_report(
         clone_acc             = clone_acc,
         genotype_acc          = genotype_acc,
         clone_acc_thresholds  = clone_acc_thresholds,
+        hypercluster_ari      = hypercluster_ari,
+        genotype_html_exists  = genotype_html_exists,
+        snv_accuracy_exists   = snv_accuracy_exists,
         notes                 = extra_notes if extra_notes else "No notes provided.",
     )
-
+ 
     with open(output_html, "w") as f:
         f.write(html)
-
+ 
     print("Saved report:", output_html)

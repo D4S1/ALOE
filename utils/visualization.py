@@ -121,9 +121,9 @@ def cell2clone_acc(df: pd.DataFrame,
     for i, clone_id in enumerate(labels):
         acc_dict[f"clone_{clone_id}"] = float(acc_per_class[i])
 
-    json_path = os.path.join(output_dir, f"{label}_clone_acc.json")
-    with open(json_path, 'w') as f:
-        json.dump(acc_dict, f, indent=4)
+    # json_path = os.path.join(output_dir, f"{label}_clone_acc.json")
+    # with open(json_path, 'w') as f:
+    #     json.dump(acc_dict, f, indent=4)
 
     # Confusion Matrix
     plt.figure(figsize=(8, 6))
@@ -133,9 +133,11 @@ def cell2clone_acc(df: pd.DataFrame,
     plt.ylabel('True Label')
     plt.xlabel('Predicted Label')
 
-    plot_path = os.path.join(output_dir, f"{label}_clone_acc.png")
+    plot_path = os.path.join(output_dir, f"{label}_{pred_col}_clone_acc.png")
     plt.savefig(plot_path)
     plt.close()
+
+    return acc_dict
 
 
 def plot_bcr_acc(
@@ -268,6 +270,7 @@ def snv_genotype_accuracy(
     genotypes: np.ndarray, # (n_snv, n_clones)
     label: str,
     output_dir: str,
+    pred_col: str,
     threshold: float = 0.45,
 ) -> None:
     os.makedirs(output_dir, exist_ok=True)
@@ -277,7 +280,7 @@ def snv_genotype_accuracy(
 
     for clone_id in clone_ids:
 
-        cell_indices = np.where(annotation["clone_hat"] == clone_id)[0]
+        cell_indices = np.where(annotation[pred_col] == clone_id)[0]
         if not cell_indices.size:
             n_snv = genotypes[..., clone_id - 1].shape[0]
             acc_cols[f"clone_{clone_id}"] = np.zeros(n_snv)
@@ -350,6 +353,6 @@ def snv_genotype_accuracy(
     )
 
     if output_dir:
-        fig.write_html(os.path.join(output_dir, f"{label}_snv_accuracy.html"))
+        fig.write_html(os.path.join(output_dir, f"{label}_{pred_col}_snv_accuracy.html"))
     else:
         fig.show()
