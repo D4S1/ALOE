@@ -87,7 +87,7 @@ def _aggregate_vaf_per_hypercluster(
 
         rep_vaf = np.where(depth == 0, 0.25, summed[..., 0] / safe_depth)
 
-        vaf_matrix[i]              = rep_vaf
+        vaf_matrix[i]                 = rep_vaf
         cell_vaf_matrix[cell_indices] = rep_vaf
 
     return vaf_matrix, unique_hcs, reliable_mask, cell_vaf_matrix
@@ -130,7 +130,7 @@ def _cluster_vaf_hierarchical(
     max_clones: int = 8,
     linkage_method: str = "average",
     metric: str = "cityblock",
-    threshold: float = 0.3,
+    threshold: float = 0.25,
 ) -> np.ndarray:
     """
     Hierarchical clustering of VAF vectors → clone assignments.
@@ -151,7 +151,7 @@ def _cluster_vaf_hierarchical(
         metric = "euclidean"
 
     if metric == "jaccard":
-        vaf_matrix = np.where(vaf_matrix < threshold, 0, 1)
+        vaf_matrix = np.where(vaf_matrix <= threshold, 0, 1)
 
     dist_vec = pdist(vaf_matrix, metric=metric)
     dist_vec = np.nan_to_num(dist_vec, nan=0.0)

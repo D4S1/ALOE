@@ -271,7 +271,7 @@ def snv_genotype_accuracy(
     label: str,
     output_dir: str,
     pred_col: str,
-    threshold: float = 0.45,
+    threshold: float = 0.25,
 ) -> None:
     os.makedirs(output_dir, exist_ok=True)
     counts    = counts.numpy() if hasattr(counts, "numpy") else np.asarray(counts)

@@ -73,7 +73,7 @@ def _avg_genotype_accuracy(
     counts: np.ndarray,    # (n_cells, n_snv, 2)  [0]=mut  [1]=non-mut
     genotypes: np.ndarray, # (n_snv, n_clones)
     pred_col: str,
-    threshold: float=0.45
+    threshold: float=0.25
 ) -> dict:
 
     counts    = counts.numpy() if hasattr(counts, "numpy") else np.asarray(counts)
@@ -160,7 +160,7 @@ def evaluate_model(model: FACTMx_model|str,
                    model_label:str="",
                    input_dir:Path=Path(''),
                    simulated: bool=False,
-                   mut_threshold: float=0.9,
+                   mut_threshold: float=0.25,
                    ):
     label = f"{sample}_{model_label}"
     data, bcr_df = data if data is not None else prep_data(data_path, simulated=simulated)
