@@ -123,7 +123,7 @@ def create_model_report(
     architecture = _parse_architecture(label)
  
     # ── Metrics / Accuracy ───────────────────────────────────────────────────
-    json_path = fig_path / 'metrics.json'
+    json_path = fig_path / f'{label}_metrics.json'
 
     clone_acc = None
     genotype_acc = None
