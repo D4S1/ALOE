@@ -556,7 +556,7 @@ function openTab(evt, tabName) {
                 {% endfor %}
                 {% if 'avg_acc' in genotype_acc %}
                 <tr class="overall-row">
-                  <td>Overall Avg</td>
+                  <td>Overall</td>
                   {% for m in metric_names %}
                     {%- set val = genotype_acc['avg_acc'][m] -%}
                     <td>

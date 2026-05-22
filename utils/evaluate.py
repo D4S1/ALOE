@@ -2,6 +2,7 @@ from FACTMx.FACTMx_model import FACTMx_model
 import tensorflow as tf
 import numpy as np
 import pandas as pd
+from umap import UMAP
 from sklearn.metrics import adjusted_rand_score
 import os
 import json
@@ -79,6 +80,8 @@ def _avg_genotype_accuracy(
     counts    = counts.numpy() if hasattr(counts, "numpy") else np.asarray(counts)
     acc_dict  = {}
     clone_ids = sorted(annotation["clone"].unique())
+    accs = []
+    n_cells = counts.shape[0]
 
     for clone_id in clone_ids:
 
@@ -102,8 +105,9 @@ def _avg_genotype_accuracy(
         gt_genotype = genotypes[..., clone_id - 1]
 
         acc_dict[f"clone_{clone_id}"] = float((consensus_genotype == gt_genotype).mean())
+        accs.append((clone_counts.shape[0] / n_cells) * acc_dict[f"clone_{clone_id}"])
 
-    acc_dict["avg_acc"] = float(np.mean(list(acc_dict.values())))
+    acc_dict["avg_acc"] = round(float(np.sum(accs)), 3)
 
     return acc_dict
 
@@ -161,6 +165,7 @@ def evaluate_model(model: FACTMx_model|str,
                    input_dir:Path=Path(''),
                    simulated: bool=False,
                    mut_threshold: float=0.25,
+                   seed=42
                    ):
     label = f"{sample}_{model_label}"
     data, bcr_df = data if data is not None else prep_data(data_path, simulated=simulated)
@@ -200,22 +205,25 @@ def evaluate_model(model: FACTMx_model|str,
     viz.plot_snv_rec(diff, diff_snv, smape, smape_snv, label, save_figs)
 
     # LATENT
+    # Calculate UMAP exactly ONE time
+    z_red = UMAP(n_components=2, random_state=seed, n_jobs=1).fit_transform(latent)
+    
     viz.plot_latent(
-        latent,
+        z_red,
         annotation[f"{model_label}_cityblock_clone"],
         "Cityblock clusters",
         label=label,
         save_path=save_figs
-        )
+    )
     viz.plot_latent(
-        latent,
+        z_red,
         annotation[f"{model_label}_jaccard_clone"],
         "Jaccard clusters",
         label=label,
         save_path=save_figs
-        )
+    )
     viz.plot_latent(
-        latent,
+        z_red,
         annotation[f"{model_label}_hypercluster"],
         "Hyperclusters",
         label=label,
@@ -246,7 +254,13 @@ def evaluate_model(model: FACTMx_model|str,
             pred_col="cityblock",
             inplace=False
         )
-        viz.plot_latent(latent, bcr_df.clone, 'Clone', label, save_figs)
+        viz.plot_latent(
+            z_red,
+            bcr_df.clone,
+            'Clone',
+            label=label,
+            save_path=save_figs
+        )
 
         # collect per-metric dicts, then transpose to clone-first
         clone_cityblock = viz.cell2clone_acc(annotation, save_figs, label, true_col='clone', pred_col='cityblock')

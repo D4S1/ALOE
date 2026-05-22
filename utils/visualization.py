@@ -1,5 +1,4 @@
 from sklearn.metrics import confusion_matrix, accuracy_score
-from umap import UMAP
 import matplotlib.pyplot as plt
 import plotly.express as px
 import plotly.graph_objects as go
@@ -53,10 +52,14 @@ def plot_losses(train_losses,
         plt.show()
 
 
-def plot_latent(latent, clusters, name, label="", save_path="", seed=42):
+def plot_latent(
+        z_red,
+        clusters,
+        name,
+        label="",
+        save_path="",
+    ):
     os.makedirs(save_path, exist_ok=True)
-
-    z_red = UMAP(n_components=2, random_state=seed, n_jobs=1).fit_transform(latent)
 
     df = pd.DataFrame({
         "UMAP1": z_red[:,0],
@@ -98,8 +101,7 @@ def plot_latent(latent, clusters, name, label="", save_path="", seed=42):
         include_plotlyjs="cdn",
         config={"responsive": True}
     )
-
-    return outfile
+    del fig
 
 
 def cell2clone_acc(df: pd.DataFrame,
@@ -356,3 +358,5 @@ def snv_genotype_accuracy(
         fig.write_html(os.path.join(output_dir, f"{label}_{pred_col}_snv_accuracy.html"))
     else:
         fig.show()
+
+    del fig

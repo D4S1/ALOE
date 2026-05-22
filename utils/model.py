@@ -2,6 +2,7 @@ import os
 import pandas as pd
 import tensorflow as tf
 from typing import List
+import gc
 
 from FACTMx.FACTMx_head import FACTMx_head_Multinomial
 from FACTMx.FACTMx_encoder import FACTMx_encoder_Linear
@@ -101,5 +102,12 @@ def test_models(
         clustering_df = pd.concat([clustering_df, label_df], axis=1)
 
         model.save(os.path.join(model_path, model_label))
+        
+        tf.keras.backend.clear_session()
+        del model
+        gc.collect()
+
+    del data
+    gc.collect()
 
     clustering_df.to_csv(os.path.join(annotation_path, f'{sample_name}_clustering.csv'))
