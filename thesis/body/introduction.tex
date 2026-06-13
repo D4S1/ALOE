@@ -2,13 +2,19 @@
 
 \section{General introduction to the topic}
 
-TODO
+Non-Hodgkin lymphomas are a heterogeneous group of malignancies arising from lymphocytes, and follicular lymphoma (FL) is among the most common indolent forms.
+FL is not a single uniform disease but the product of years of subclinical clonal evolution, so a single tumour typically harbours several genetically distinct subpopulations of cells.
+Characterising this heterogeneity, meaning which clones are present, how they differ genetically, and how those differences affect cell behaviour, is central to understanding how the disease develops, persists, and sometimes transforms into an aggressive lymphoma.
+
+Single-cell sequencing now makes it possible to measure several molecular layers in the same cell, including its mutation profile, its B-cell receptor sequence, and its gene expression state, in principle allowing a tumour clone's genotype to be related directly to its phenotype.
+In practice these measurements are sparse and noisy at single-cell resolution, and combining them into a coherent picture of clonal structure is a non-trivial computational problem.
+This work develops and evaluates a computational method for this problem in FL, assigning single cells to their clones and using the result to study how genotype and phenotype are linked.
 
 \section{Biological background}
 
-\subsection{B cell lifecyle}
+\subsection{B-cell life cycle}
 
-The B cells are an essential component of adaptive immunity, responsible for producing antibodies. Their development is tightly regulated to generate a highly diverse range of antibodies (repertoire diversity) while ensuring the cells do not attack the body's own tissues (immune tolerance).
+The B cells are an essential component of adaptive immunity, responsible for producing antibodies. Their development is tightly regulated to generate a highly diverse range of antibodies while ensuring the cells do not attack the body's own tissues.
 This developmental progression begins in the bone marrow, where hematopoietic stem cells differentiate into common lymphoid progenitors to seed the B-cell lineage.
 
 Lineage commitment is driven by a network of transcription factors and microenvironmental cues that guide the cells through distinct developmental phases. During the pro-B stage, cells initiate V(D)J recombination to rearrange their immunoglobulin heavy chains.
@@ -21,8 +27,7 @@ Following these genetic modifications, the cells undergo stringent selection; on
 
 Given that GC reactions deliberately introduce DNA breaks and point mutations into immunoglobulin genes to optimize antigen affinity, off-target mutations are an unavoidable byproduct.
 Consequently, this AID-mediated mutagenesis is the primary mechanism by which B cells acquire secondary, oncogenic lesions that can initiate or promote lymphoma.
-In summary, while the bone marrow establishes the foundational B-cell repertoire, the germinal centers act as both the crucible for functional optimization and the primary site for oncogenic mutagenesis. \cite{murphy_janeways_2017}
-
+The bone marrow therefore establishes the foundational B-cell repertoire, while the germinal centers are where functional optimization occurs and where the oncogenic mutations that can lead to lymphoma most often arise. \cite{murphy_janeways_2017}
 
 \subsection{Follicular lymphoma}
 
@@ -44,10 +49,10 @@ Unlike FLLCs, CPCs are committed to eventual lymphomagenesis and provide the poo
 Importantly, CPCs also function as the genetic reservoir for relapse and transformation.
 While early relapses may emerge through linear evolution of the dominant FL clone, late relapses and transformation events typically reflect divergent evolution from a shared CPC ancestor that has branched into genetically distinct sublineages \cite{carbone_follicular_2019}.
 
-\begin{figure}[h]
+\begin{figure}[ht]
     \centering
     \includegraphics[width=0.9\linewidth]{figures/FL_development.pdf}
-    \caption{The Stepwise Evolutionary Landscape of Follicular Lymphoma.}
+    \caption{The stepwise evolution of follicular lymphoma.}
     The development of FL is a long-term process that spans years of subclinical disease. (Left) The process starts with t(14;18) translocations occurring during early B-cell development in the bone marrow or during primary germinal center (GC) reactions. This rearrangement leads to BCL2 overexpression, which prevents apoptosis in cells that would otherwise be eliminated during the normal biological selection process. (Center) These BCL2-expressing cells give rise to follicular lymphoma–like cells (FLLCs) that undergo repeated GC re-entry and spread throughout the lymphoid system. The acquisition of additional mutations, particularly in epigenetic regulators, leads to the emergence of committed cancer precursor cells (CPCs). (Right) CPCs act as a shared ancestral reservoir. While some sublineages evolve directly into the primary tumor found at diagnosis, others remain as a separate pool. This reservoir drives clinical relapse and histological transformation (t-FL) through branched evolution, explaining why relapsed disease is often genetically different from the primary tumor. Figure from \cite{carbone_follicular_2019}
     \label{fig:fl_evolution}
 \end{figure}
@@ -55,25 +60,66 @@ While early relapses may emerge through linear evolution of the dominant FL clon
 Once FL is clinically established, the malignant cells remain locked in a GC-like state and persist through iterative GC re-entry, ongoing AID-driven mutagenesis, and selection within the lymphoid niche.
 FL primarily involves lymph nodes but frequently extends to the bone marrow and, in some cases, to the peripheral blood.
 
-The tumor microenvironment (TME) plays a decisive role in sustaining the disease. T$_{\textit{FH}}$ cells provide CD40L, IL-4, and IL-21, which contribute to NF-κB and JAK–STAT pathway activation in tumor B cells \cite{krull_follicular_2024}\cite{carbone_follicular_2019}.
+The tumor microenvironment (TME) is central to sustaining the disease. T$_{\textit{FH}}$ cells provide CD40L, IL-4, and IL-21, which contribute to NF-κB and JAK–STAT pathway activation in tumor B cells \cite{krull_follicular_2024}\cite{carbone_follicular_2019}.
 Follicular dendritic and stromal cells produce CXCL12 and CXCL13 that support migration and survival, while macrophages together with regulatory T cells contribute to local immune suppression\cite{carbone_follicular_2019}.
 
 Tumor-intrinsic mechanisms take advantage of these interactions. N-glycosylation of the BCR enables antigen-independent signaling, which drives clonal expansion without the need for antigen recognition and increases the probability of acquiring somatic mutations. Among the most crucial of these are alterations in chromatin regulators such as CREBBP and EZH2, which promote immune evasion by mechanisms including downregulation of MHC expression. Loss of TNFRSF14 further strengthens T$_{\textit{FH}}$–stromal crosstalk, and stromal polarization by neutrophils and macrophages through NF-κB pathways reinforces the supportive niche. \cite{carbone_follicular_2019}
 
 Although usually indolent, FL carries a persistent risk of histologic transformation to an aggressive form, typically diffuse large B-cell lymphoma (DLBCL). Transformation involves the acquisition of aggressive lesions such as TP53 loss, CDKN2A/B deletion, BCL6 rearrangements, or MYC activation, which drive genomic instability, impair cell-cycle checkpoints, and reduce reliance on microenvironmental cues \cite{pasqualucci_genetics_2014}. These genetic and phenotypic changes correspond to the disappearance of follicular architecture, the emergence of diffuse growth, and clinical acceleration with extranodal spread. Whether transformation occurs through a linear accumulation of lesions in the dominant FL clone or through divergent evolution from common precursor cells, both models have been observed, and in either case the outcome is an abrupt shift from indolent to aggressive biology.
 
-\subsection{Current diagnosis and prognostic treatments} 
+\subsection{Current diagnosis and prognostics}
 
-TODO
+In clinical practice, FL is diagnosed from tissue rather than from molecular data.
+The process starts with a biopsied lymph node, which is examined for the abnormal follicular architecture that characterises the disease.
+The malignant cells closely resemble normal germinal-center B cells and express the same CD10 and BCL6 markers.
+What sets them apart is high expression of BCL2, which normal germinal-center cells do not show \cite{boughan_follicular_2019,alaggio_5th_2022}.
 
-\section{the goal of the study}
+All of these methods read out protein expression and tissue structure rather than the tumour genome.
+Sequencing-based molecular testing is therefore not yet a routine part of diagnosis, although liquid-biopsy assays that measure circulating tumour DNA are beginning to add genetic information that tissue examination cannot provide \cite{hamova_circulating_2025}.
 
-TODO
-- current problems
-- molecular diagnosis
-- what does it means for other/how can it help
+Once FL is diagnosed, the clinical question is how aggressively it is likely to behave.
+This is answered with prognostic indices computed at diagnosis from routine clinical and laboratory measurements.
+The most widely used for risk stratification are the Follicular Lymphoma International Prognostic Index (FLIPI) and its successor FLIPI-2 \cite{mozas_prognostic_2021,jelicic_clinical_2021,jona_prognostication_2025}, which score variables such as patient age, disease stage, haemoglobin level, and measures of tumour burden like the number or size of involved lymph-node areas, and place each patient in a low, intermediate, or high risk group \cite{solal-celigny_follicular_2004,federico_follicular_2009}.
 
-\section{Approach we will use}
-TODO
-\subsection{previous probabilistic approach - graph methods}
-\subsection{New deep learning approach}
+A complementary and more clinically decisive measure is POD24, defined as disease progression within 24 months of starting immunochemotherapy.
+Unlike the FLIPI, it is not calculated from baseline variables but observed after treatment, and its value lies in how sharply it separates outcomes.
+Patients who progress this early have markedly shorter survival, whereas those who do not have a life expectancy close to that of the general population \cite{casulo_early_2015}.
+
+Purely clinical indices, however, ignore the genetics of the tumour.
+The clinicogenetic m7-FLIPI was the first model to close this gap, combining the FLIPI score and performance status with the mutation status of 7 recurrently mutated genes.
+The idea behind it is that this molecular information identifies the high-risk, POD24-prone patients more accurately than clinical factors alone \cite{pastore_integration_2015,jurinovic_clinicogenetic_2016}.
+Some mutations also carry prognostic weight individually. EZH2 mutations are associated with a more favourable course, whereas TP53 loss and related lesions mark aggressive, transformation-prone disease \cite{jurinovic_clinicogenetic_2016,pasqualucci_genetics_2014}.
+Even with these additions, no index can reliably predict the course of an individual patient \cite{boughan_follicular_2019}.
+
+All of these tools, clinical and clinicogenetic alike, work from bulk summaries of the whole tumour.
+A different and more basic question is how the genotype of an individual tumour clone relates to the genes its cells express.
+That cell level link between genotype and phenotype is the one this thesis sets out to study.
+
+\section{The goal of the study}
+
+Single-cell RNA sequencing (scRNA-seq) measures the transcriptome and does not by itself report a cell's genotype.
+Genotype information has to be recovered from reads.
+At positions where a somatic mutation is known to occur, the reads covering that position are counted according to whether they carry the reference or the mutant allele.
+This produces a second count matrix defined only over the mutated sites rather than over all genes. Because these sites are few and are covered by reads in only a fraction of cells, the matrix is even sparser and more zero-inflated than the already sparse expression matrix, so the genotype signal in any single cell is very weak.
+
+One way to strengthen this signal is to pool information across cells and modalities.
+Cells can be grouped by their shared single-nucleotide variant (SNV) profiles, which define clones, and by nearly identical B-cell receptor (BCR) sequences, which define hyperclusters nested within those clones.
+
+This problem has previously been approached with probabilistic graphical models.
+CACTUS integrates whole-exome-derived SNV genotypes with scRNA-seq reads at the corresponding loci, pooling the sparse mutation signal across pre-computed cell clusters under the assumption that co-clustered cells share a clone.
+CaClust extends this idea by adding the BCR as an explicit modality.
+In both models the way the data are generated is specified by hand.
+This covers the distribution assumed for each observation, how the underlying clone gives rise to the data and how the two modalities relate to one another.
+Because these choices are fixed in advance, the model cannot revise them if the real structure of the data turns out to be different.
+
+This work takes a methodological approach and asks whether a deep generative model, specifically a multimodal variational autoencoder (VAE), is better suited to clone assignment than its probabilistic predecessors.
+The VAE still assumes a distribution for each observation, but instead of fixing how the modalities relate to one another and to the underlying clone, it learns these relationships from the data.
+The model has two inputs.
+The first is the SNV read-count matrix, the same representation used by CACTUS and CaClust.
+The second is the BCR sequence of each cell.
+Each modality is encoded separately and then mapped into a shared latent space, which is expected to reflect the clonal hierarchy, with BCR hyperclusters forming tight sub-clusters nested inside the broader SNV-defined clones.
+Assignment accuracy, together with the quality of the model's genotype reconstructions capabilities, is evaluated against CACTUS and CaClust on FL patient samples and synthetic datasets, which shows how a variational approach performs relative to those models.
+
+Clone assignment is only the first step. Once each cell has been placed in its clone, the gene expression profiles of those cells can be compared across clones to describe how each clone behaves, and these phenotypes can be set against the genetic features that define the clones.
+What the model contributes is sharper clonal resolution. By combining the SNV and BCR modalities, it recovers clonal structure that neither modality determines on its own, and this is what makes the downstream comparison possible.
+Such comparisons are a starting point for new hypotheses, giving a more detailed view of tumour heterogeneity and clonal evolution and suggesting mechanisms that connect specific genetic lesions to the expression states found alongside them.
