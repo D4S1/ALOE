@@ -46,13 +46,22 @@ def train_model(data:dict,
                          loss_scales=loss_scales
                          )
 
-    model.optimizer = tf.keras.optimizers.Adam(learning_rate=hypers['lr'])
-    losses = model.train(tf.data.Dataset.from_tensor_slices(data['train']), # validation dataset return train_loss, val_loss
-                validation_dataset=data['val'],
-                epochs=hypers['epochs'],
-                batch_size=hypers['batch_size'],
-                shuffle=True,
-                )
+    model.optimizer = tf.keras.optimizers.AdamW(
+        learning_rate=hypers['lr'],
+        weight_decay=1e-4,
+        beta_1=0.9,
+        beta_2=0.98,
+        epsilon=1e-6,
+        global_clipnorm=1.0
+    )
+    losses = model.train(
+        tf.data.Dataset.from_tensor_slices(data['train']), # validation dataset return train_loss, val_loss
+        validation_dataset=data['val'],
+        epochs=hypers['epochs'],
+        batch_size=hypers['batch_size'],
+        shuffle=True,
+    )
+    
     return model, losses
 
 
