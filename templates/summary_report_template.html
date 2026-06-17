@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITLE__</title>
+<style>
+  :root{
+    --paper:#FBFAF6; --ink:#181614; --muted:#6B6358; --line:#E2DCCF;
+    --accentA:#1F6F78; --accentB:#B5683E;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:"Iowan Old Style",Georgia,"Times New Roman",serif;
+    line-height:1.55;-webkit-font-smoothing:antialiased}
+  header{padding:40px 28px 24px;border-bottom:2px solid var(--ink);max-width:1280px;margin:0 auto}
+  .eyebrow{font-family:ui-monospace,Menlo,monospace;font-size:11px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+  h1{font-size:clamp(28px,4vw,46px);line-height:1.02;margin:0 0 8px;font-weight:600;letter-spacing:-.01em}
+  .sub{color:var(--muted);max-width:64ch;font-size:16px;margin:0}
+  .wrap{max-width:1280px;margin:0 auto;padding:0 28px 80px}
+
+  .toolbar{position:sticky;top:0;z-index:20;background:rgba(251,250,246,.93);
+    backdrop-filter:blur(6px);border-bottom:1px solid var(--line);padding:14px 0;margin:26px 0 22px}
+  .toolbar-inner{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-end}
+  .grp{display:flex;flex-direction:column;gap:5px}
+  .grp > span{font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--muted)}
+  .chips{display:flex;gap:6px;flex-wrap:wrap}
+  .chip{font-family:ui-monospace,Menlo,monospace;font-size:12px;padding:5px 11px;border:1px solid var(--line);
+    background:#fff;border-radius:999px;cursor:pointer;color:var(--muted);transition:.12s;user-select:none}
+  .chip:hover{border-color:var(--ink);color:var(--ink)}
+  .chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .spacer{flex:1}
+  .count{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--muted);white-space:nowrap}
+  .modebtn{font-family:ui-monospace,Menlo,monospace;font-size:12px;padding:6px 12px;border:1px solid var(--ink);
+    background:#fff;border-radius:4px;cursor:pointer}
+  .modebtn.on{background:var(--ink);color:#fff}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(440px,1fr));gap:20px}
+  .card{border:1px solid var(--line);background:#fff;border-radius:4px;overflow:hidden;
+    display:flex;flex-direction:column;transition:.12s}
+  .card:hover{border-color:var(--ink);box-shadow:0 4px 14px rgba(0,0,0,.06)}
+  .card .meta{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line);
+    font-family:ui-monospace,Menlo,monospace;font-size:11px;flex-wrap:wrap}
+  .tag{padding:2px 8px;border-radius:3px;font-size:10px;letter-spacing:.04em}
+  .card .fname{margin-left:auto;color:var(--muted);font-size:10px}
+  .card img{width:100%;display:block;cursor:zoom-in;background:#fff}
+
+  .cmp-group{margin-bottom:30px}
+  .cmp-head{font-family:ui-monospace,Menlo,monospace;font-size:12px;letter-spacing:.06em;
+    text-transform:uppercase;color:var(--ink);padding-bottom:8px;margin-bottom:12px;border-bottom:1px solid var(--line);
+    display:flex;gap:10px;align-items:baseline}
+  .cmp-head .hint{color:var(--muted);text-transform:none;letter-spacing:0;font-size:11px}
+  .cmp-row{display:grid;gap:18px}
+  .col-label{font-family:ui-monospace,Menlo,monospace;font-size:11px;color:#fff;padding:3px 9px;border-radius:3px;
+    display:inline-block;margin-bottom:6px}
+  .empty{grid-column:1/-1;text-align:center;color:var(--muted);padding:60px;font-family:ui-monospace,monospace;font-size:13px}
+
+  .lb{position:fixed;inset:0;background:rgba(20,18,16,.9);display:none;align-items:center;justify-content:center;
+    z-index:100;padding:30px;cursor:zoom-out}
+  .lb.on{display:flex}
+  .lb img{max-width:96vw;max-height:92vh;background:#fff;border-radius:4px}
+  .lb .cap{position:fixed;bottom:18px;left:0;right:0;text-align:center;color:#fff;
+    font-family:ui-monospace,Menlo,monospace;font-size:12px;letter-spacing:.05em}
+  footer{max-width:1280px;margin:0 auto;padding:0 28px 60px;color:var(--muted);font-size:13px}
+  @media(max-width:680px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div class="eyebrow">__EYEBROW__</div>
+  <h1>__TITLE__</h1>
+  <p class="sub">__SUBTITLE__</p>
+</header>
+
+<div class="wrap">
+  <div class="toolbar"><div class="toolbar-inner" id="facetbar">
+    <div class="spacer"></div>
+    <div class="grp"><span>View</span>
+      <div style="display:flex;gap:6px">
+        <button class="modebtn on" data-mode="grid">Grid</button>
+        <button class="modebtn" data-mode="compare">Compare by arch</button>
+      </div>
+    </div>
+    <div class="count" id="count"></div>
+  </div></div>
+  <div id="stage"></div>
+</div>
+
+<div class="lb" id="lb"><img id="lbimg" src=""><div class="cap" id="lbcap"></div></div>
+
+<footer>Single-file report · all figures embedded · open in any browser, no internet needed.
+  Filters are inclusive within a facet and combined across facets.</footer>
+
+<script>
+const DATA = /*__DATA__*/[];
+// Facet keys present on each record (compare mode pivots on `arch`).
+const FACET_KEYS = ["arch","param","family","distance"];
+const FACET_LABELS = {arch:"Architecture",param:"Latent size",family:"Metric",distance:"Distance"};
+// Preferred display order for known values; unknowns are appended (numeric-aware).
+const PREF = {family:["hypercluster","genotype","clone"], distance:["ari","jaccard","cityblock"]};
+const PRETTY = {hypercluster:"Hypercluster ARI",genotype:"Genotype",clone:"Clone",ari:"ARI"};
+const PALETTE = ["#1F6F78","#B5683E","#3B5BA5","#9A7B2E","#5C5470","#5B7553","#8C4A5B"];
+
+const pretty = v => PRETTY[v] || v;
+function colorFor(key,value){
+  // stable color per distinct value of a facet, from the palette
+  const vals = uniq(key);
+  const i = vals.indexOf(value);
+  const bg = PALETTE[i % PALETTE.length];
+  return {bg, fg:"#fff"};
+}
+function uniq(key){
+  let vals=[...new Set(DATA.map(d=>d[key]).filter(v=>v!=null))];
+  const pref=PREF[key];
+  vals.sort((a,b)=>{
+    if(pref){const ia=pref.indexOf(a),ib=pref.indexOf(b);
+      if(ia!=-1||ib!=-1) return (ia==-1?1e9:ia)-(ib==-1?1e9:ib);}
+    const na=parseFloat(a),nb=parseFloat(b);
+    if(!isNaN(na)&&!isNaN(nb)) return na-nb;
+    return String(a).localeCompare(String(b));
+  });
+  return vals;
+}
+
+let active={}; FACET_KEYS.forEach(k=>active[k]=new Set());
+let mode="grid";
+
+function buildChips(){
+  const bar=document.getElementById("facetbar");
+  // insert facet groups before the spacer
+  const spacer=bar.querySelector(".spacer");
+  FACET_KEYS.forEach(key=>{
+    const vals=uniq(key);
+    if(vals.length<=1) return;                 // skip facets with nothing to filter
+    const grp=document.createElement("div"); grp.className="grp";
+    const lab=document.createElement("span"); lab.textContent=FACET_LABELS[key]||key; grp.appendChild(lab);
+    const chips=document.createElement("div"); chips.className="chips";
+    vals.forEach(v=>{
+      const c=document.createElement("div"); c.className="chip";
+      c.textContent=(key==="family"||key==="distance")?pretty(v):v;
+      c.onclick=()=>{active[key].has(v)?active[key].delete(v):active[key].add(v);c.classList.toggle("on");render();};
+      chips.appendChild(c);
+    });
+    grp.appendChild(chips); bar.insertBefore(grp,spacer);
+  });
+}
+function passes(r){
+  for(const k of FACET_KEYS){ if(active[k].size && !active[k].has(r[k])) return false; }
+  return true;
+}
+function tag(text,style){ return `<span class="tag" style="${style||''}">${text}</span>`; }
+function metaTags(r){
+  const a=colorFor("arch",r.arch);
+  let h=tag(r.arch,`background:${a.bg};color:${a.fg}`);
+  if(r.param!=null) h+=tag("latent "+r.param,"background:#efeadd;color:#6b5d33");
+  h+=tag(pretty(r.family),"background:#f0ece1;color:#5c5446");
+  if(r.distance!=null && r.distance!=="ari"){const d=colorFor("distance",r.distance);
+    h+=tag(r.distance,`background:${d.bg}22;color:${d.bg}`);}
+  return h;
+}
+function card(r){
+  return `<div class="card"><div class="meta">${metaTags(r)}<span class="fname">${r.file}</span></div>
+    <img loading="lazy" src="${r.src}" onclick="zoom('${r.file}')"></div>`;
+}
+function render(){
+  const rows=DATA.filter(passes);
+  document.getElementById("count").textContent=rows.length+" / "+DATA.length+" figures";
+  const stage=document.getElementById("stage");
+  if(!rows.length){stage.innerHTML='<div class="empty">No figures match these filters.</div>';return;}
+
+  if(mode==="grid"){ stage.innerHTML='<div class="grid">'+rows.map(card).join("")+'</div>'; return; }
+
+  // compare: group by everything except arch; one column per arch value
+  const archs=uniq("arch").filter(a=>rows.some(r=>r.arch===a));
+  const groups={};
+  rows.forEach(r=>{const k=[r.family,r.distance,r.param].join("|");(groups[k]=groups[k]||{})[r.arch]=r;});
+  const famOrder=uniq("family"), distOrder=uniq("distance"), parOrder=uniq("param");
+  const keys=Object.keys(groups).sort((a,b)=>{
+    const A=a.split("|"),B=b.split("|");
+    return famOrder.indexOf(A[0])-famOrder.indexOf(B[0])
+        || distOrder.indexOf(A[1])-distOrder.indexOf(B[1])
+        || parOrder.indexOf(A[2])-parOrder.indexOf(B[2]);
+  });
+  let html="";
+  keys.forEach(k=>{
+    const [fam,dist,par]=k.split("|");
+    const title=pretty(fam)+(dist&&dist!=="ari"?" · "+dist:"")+(par!=="undefined"&&par!=="null"?" · latent "+par:"");
+    html+=`<div class="cmp-group"><div class="cmp-head">${title}<span class="hint">${archs.join(" vs ")}</span></div>`;
+    html+=`<div class="cmp-row" style="grid-template-columns:repeat(${archs.length},1fr)">`;
+    archs.forEach(a=>{
+      const r=groups[k][a]; const c=colorFor("arch",a);
+      html+= r?`<div><span class="col-label" style="background:${c.bg}">${a} ${r.param??""}</span>${card(r)}</div>`:`<div></div>`;
+    });
+    html+=`</div></div>`;
+  });
+  stage.innerHTML=html;
+}
+document.querySelectorAll(".modebtn").forEach(b=>{b.onclick=()=>{
+  document.querySelectorAll(".modebtn").forEach(x=>x.classList.remove("on"));
+  b.classList.add("on");mode=b.dataset.mode;render();};});
+const lb=document.getElementById("lb"),lbimg=document.getElementById("lbimg"),lbcap=document.getElementById("lbcap");
+function zoom(file){const r=DATA.find(d=>d.file===file);lbimg.src=r.src;lbcap.textContent=r.file;lb.classList.add("on");}
+lb.onclick=()=>lb.classList.remove("on");
+document.addEventListener("keydown",e=>{if(e.key==="Escape")lb.classList.remove("on");});
+buildChips(); render();
+</script>
+</body>
+</html>

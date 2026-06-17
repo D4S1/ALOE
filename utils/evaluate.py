@@ -5,6 +5,7 @@ import pandas as pd
 from umap import UMAP
 from sklearn.metrics import adjusted_rand_score
 import os
+import gc
 import json
 from pathlib import Path
 
@@ -184,6 +185,10 @@ def evaluate_model(model: FACTMx_model|str,
     (snv, counts), (bcr, ones) = data['dataset']
     dist_snv, dist_bcr = [head.make_decoder(latent, counts) for head in model.heads]
 
+    # model is no longer needed once decoders are built — free it early
+    del model
+    gc.collect()
+
     save_figs = input_dir / f'figs/{label}'
     os.makedirs(save_figs, exist_ok=True)
 
@@ -196,6 +201,10 @@ def evaluate_model(model: FACTMx_model|str,
 
     viz.plot_bcr_acc(acc_per_position, acc_per_cell, heavy_chains.get(sample, 150), label, save_figs)
 
+    # free BCR intermediates + decoder
+    del bcr_correct, acc_per_position, acc_per_cell, dist_bcr
+    gc.collect()
+
     # SNV
     re_snv = dist_snv.probs_parameter() * counts[..., None]
     diff = np.abs(snv - re_snv)
@@ -204,10 +213,18 @@ def evaluate_model(model: FACTMx_model|str,
 
     viz.plot_snv_rec(diff, diff_snv, smape, smape_snv, label, save_figs)
 
+    # free the full-resolution SNV arrays + decoder once heatmaps are written
+    del re_snv, diff, diff_snv, smape, smape_cell, smape_snv, dist_snv
+    gc.collect()
+
     # LATENT
     # Calculate UMAP exactly ONE time
     z_red = UMAP(n_components=2, random_state=seed, n_jobs=1).fit_transform(latent)
-    
+
+    # latent no longer needed after UMAP
+    del latent
+    gc.collect()
+
     viz.plot_latent(
         z_red,
         annotation[f"{model_label}_cityblock_clone"],
@@ -297,3 +314,10 @@ def evaluate_model(model: FACTMx_model|str,
 
     with open(save_figs / f'{label}_metrics.json', 'w') as f:
         json.dump(metrics, f, indent=4)
+
+    # final cleanup so nothing carries into the next iteration of the loop
+    del z_red, annotation, snv, counts, bcr, ones
+    if simulated:
+        del clones_genotypes
+    tf.keras.backend.clear_session()
+    gc.collect()
